@@ -84,8 +84,6 @@ class MDP {
     theList.add(new MyStateProbability(to, probability));
   }
 
-
-
   public ArrayList<MyStateProbability> getActualProbabilities(MyState from, MyAction action) {
     HashMap<MyAction, ArrayList<MyStateProbability>> theMap = 
       transitionProbabilities.get(from);

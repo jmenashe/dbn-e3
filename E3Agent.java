@@ -40,21 +40,26 @@ public class E3Agent implements AgentInterface {
   int actRangeMax;
 
   public void agent_init(String taskSpecification) {
-    TaskSpec theTaskSpec=new TaskSpec(taskSpecification);
+    TaskSpec theTaskSpec = new TaskSpec(taskSpecification);
+
     System.out.println("Skeleton agent parsed the task spec.");
     System.out.println("Observation have "+theTaskSpec.getNumDiscreteObsDims()+" integer dimensions");
     System.out.println("Actions have "+theTaskSpec.getNumDiscreteActionDims()+" integer dimensions");
-    IntRange theObsRange=theTaskSpec.getDiscreteObservationRange(0);
+
+    IntRange theObsRange = theTaskSpec.getDiscreteObservationRange(0);
+
     System.out.println("Observation (state) range is: "+theObsRange.getMin()+" to "+theObsRange.getMax());
-    IntRange theActRange=theTaskSpec.getDiscreteActionRange(0);
+
+    IntRange theActRange = theTaskSpec.getDiscreteActionRange(0);
     System.out.println("Action range is: "+theActRange.getMin()+" to "+theActRange.getMax());
-    DoubleRange theRewardRange=theTaskSpec.getRewardRange();
+    DoubleRange theRewardRange = theTaskSpec.getRewardRange();
     System.out.println("Reward range is: "+theRewardRange.getMin()+" to "+theRewardRange.getMax());
 
     actRangeMax = theActRange.getMax();
-    actRangeMin= theActRange.getMin();
+    actRangeMin = theActRange.getMin();
     obsRangeMax = theObsRange.getMax();
-    obsRangeMin= theObsRange.getMin();
+    obsRangeMin = theObsRange.getMin();
+
     mdp = new MDP();
 
     allActions = new MyAction[4];
@@ -63,9 +68,6 @@ public class E3Agent implements AgentInterface {
       temp[0] = i;
       allActions[i] = new MyAction(temp);
     }
-    //In more complex agents, you would also check for continuous observations and actions, discount factors, etc.
-    //Also, these ranges can have special values like "NEGINF, POSINF, UNSPEC (unspecified)".  There is no guarantee
-    //that they are all specified and that they are all nice numbers.
   }
 
   private MyAction[] getAllActions(MyState currentState) {
@@ -78,10 +80,12 @@ public class E3Agent implements AgentInterface {
     int leastTriedCount = Integer.MAX_VALUE;
     MyAction[] actions = getAllActions(currentState);
     HashMap<MyAction, Integer> theMap = StateActionVisitCounts.get(currentState);
+
     if (theMap == null) {
       return actions[0];
     }
-    for(MyAction a : actions) {
+
+    for (MyAction a : actions) {
       Integer currentCount = theMap.get(a);
       if (currentCount == null) {
         return a;
@@ -90,18 +94,21 @@ public class E3Agent implements AgentInterface {
         leastTriedAction = a;
       }
     }
+
     return leastTriedAction;
   }
 
   private void logThis(MyState from, MyAction action, MyState to, double reward) {
     HashMap<MyAction, Integer> theMap = StateActionVisitCounts.get(from);
-
   }
 
-  private double chanceToExplore(ArrayList<HashMap<MyState, MyAction>> policy, 
-      MyState startingState) {
+  private double chanceToExplore(
+      ArrayList<HashMap<MyState, MyAction>> policy, 
+      MyState startingState
+  ) {
     HashMap<MyState, Double> probabilities = new HashMap<MyState, Double>();
     HashMap<MyState, Double> newProbabilities = new HashMap<MyState, Double>();
+
     for (MyState state : mdp.transitionProbabilities.keySet()) {
       if (!mdp.isKnown(state)) {
         probabilities.put(state, 1.0);
@@ -117,14 +124,15 @@ public class E3Agent implements AgentInterface {
         } else {
           double newProb = 0;
           //TODO: null pointers? (Should not happen!)
-          for(MyStateProbability msp : 
+          for (MyStateProbability msp : 
               mdp.getActualProbabilities(from, policy.get(i).get(from))) {
             newProb += probabilities.get(msp.state) * msp.value;
-              }
+          }
           newProbabilities.put(from,newProb);
         }
       }
-      for(MyState state : newProbabilities.keySet()) {
+
+      for (MyState state : newProbabilities.keySet()) {
         probabilities.put(state, newProbabilities.get(state));
       }
     }
@@ -134,61 +142,43 @@ public class E3Agent implements AgentInterface {
 
   public MyAction findAction(MyState currentState) {
     MyAction theAction = null;
-    //if unknown state, balanced wandering
-    if (! mdp.isKnown(currentState)) {
+
+    // Balanced wandering if unknown state!
+    if (!mdp.isKnown(currentState)) {
       theAction = balancedWandering(currentState);
+
     } else if (exploreCount == 0 && exploitCount == 0) {
-      ArrayList<HashMap<MyState, MyAction>>  exploitPolicy = 
+      ArrayList<HashMap<MyState, MyAction>> exploitPolicy = 
         mdp.policyIterate(mixingTime, discountFactor, false, currentState);
-      ArrayList<HashMap<MyState, MyAction>>  explorePolicy = 
+      ArrayList<HashMap<MyState, MyAction>> explorePolicy = 
         mdp.policyIterate(mixingTime, discountFactor, true, currentState);
+
       //if exploration seems beneficial
       double chanceToExplore = chanceToExplore(explorePolicy, currentState);
       System.out.println("Chance to explore: " + chanceToExplore);
       if (true) {
         System.out.println("Starting exploration");
-      } 
-      //if exploitation seems beneficial
-      else {
+      } else {
+        // if exploitation seems beneficial
         System.out.println("Starting expliotation");
       }    		
     } else {
-      //Already exploring
       if (exploreCount > 0) {
-
-      } //Already exploiting
-      else {
-
+        // Already exploring
+      } else {
+        // Already exploiting
       }
 
     }
-    //else if exploration beneficial
-    //attempted exploration
-    //else
-    //attempted exploitation
+
     return theAction;
   }
 
   public Action agent_start(Observation observation) {
-    /**
-     * Choose a random action (0 or 1)
-     */
-    int theIntAction = randGenerator.nextInt(4);
-    /**
-     * Create a structure to hold 1 integer action
-     * and set the value
-     */
-    Action returnAction = new Action(1, 0, 0);
-    returnAction.intArray[0] = theIntAction;
-
-    lastAction = returnAction.duplicate();
-    lastObservation = observation.duplicate();
-
-    return returnAction;
+    return null;
   }
 
   public Action agent_step(double reward, Observation observation) {
-
     return null;
   }
 
