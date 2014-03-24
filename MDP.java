@@ -17,11 +17,14 @@ class MDP {
     HashMap<
       MyAction, 
       ArrayList<MyStateProbability>>> transitionProbabilities;
+
   HashMap<MyState, Double> rewards;
   HashSet<MyState> knownStates;
 
   public MDP() {
-    transitionProbabilities = new HashMap<MyState, HashMap<MyAction, ArrayList<MyStateProbability>>>();
+    transitionProbabilities = 
+      new HashMap<MyState, HashMap<MyAction, ArrayList<MyStateProbability>>>();
+
     rewards = new HashMap<MyState, Double>();
     knownStates = new HashSet<MyState>();
   }
@@ -29,6 +32,7 @@ class MDP {
 
   public void addToKnownStates(MyState state) {
     assert(transitionProbabilities.get(state) != null);
+
     knownStates.add(state);
   }
 
@@ -53,7 +57,6 @@ class MDP {
     Double val = rewards.get(state);
 
     if (knownStates.contains(state)) {
-
       assert(val != null);
       return val;
     }
@@ -63,6 +66,7 @@ class MDP {
     } else {
       return 0.0;
     }
+
   }
 
   public void setProbability(MyState from, MyAction action, MyState to, double probability) {
@@ -109,10 +113,13 @@ class MDP {
       hs.add(new MyAction(new int[1]));
       return hs;
     }
+
     HashMap<MyAction, ArrayList<MyStateProbability>> theMap =
       transitionProbabilities.get(from);
+
     if (theMap == null)
       return null;
+
     return theMap.keySet();
   }
 
@@ -140,12 +147,15 @@ class MDP {
 
       for(int i = 0; i < T; i++) {
         HashMap<MyState, MyAction> policy = new HashMap<MyState, MyAction>();
+
         for (MyState s : knownAndS0) {
           double reward = getReward(s, rewardExploration);
           double bestValue = Double.MAX_VALUE * -1.0;
           MyAction bestAction = null;
+
           for(MyAction a : getActions(s)) {
             double currentValue = 0;
+
             for(MyStateProbability msp : getProbabilities(s, a)) {
               if (knownStates.contains(msp.state)) {
                 currentValue += msp.value * PreviousU.get(msp.state);
@@ -155,14 +165,17 @@ class MDP {
                 currentValue += rewardMax * (T - i - 1);
               }
             }
+
             if (currentValue > bestValue) {
               bestValue = currentValue;
               bestAction = a;
             }
           }
+
           CurrentU.put(s,reward + discount * bestValue);
           policy.put(s,bestAction);
         }
+
         PreviousU = CurrentU;
         CurrentU = new HashMap<MyState, Double>();
         returnList.add(policy);
