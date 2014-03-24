@@ -125,6 +125,13 @@ class MDP {
     return knownStates.contains(state); 
   }
 
+  public ArrayList<HashMap<MyState, MyAction>> exploitationPolicy() {
+    return null;
+  }
+  public ArrayList<HashMap<MyState, MyAction>> explorationPolicy() {
+    return null;
+  }
+
   public ArrayList<HashMap<MyState, MyAction>> policyIterate(
       int T,
       double discount,
