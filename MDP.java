@@ -125,25 +125,29 @@ class MDP {
     return knownStates.contains(state); 
   }
 
-  public ArrayList<HashMap<MyState, MyAction>> 
-    policyIterate(int T, double discount, boolean rewardExploration, 
-        MyState startingState) {
+  public ArrayList<HashMap<MyState, MyAction>> policyIterate(
+      int T,
+      double discount,
+      boolean rewardExploration, 
+      MyState startingState) {
+
       HashMap<MyState, Double> PreviousU = new HashMap<MyState, Double>(); 
       HashMap<MyState, Double> CurrentU = new HashMap<MyState, Double>(); 
       ArrayList<HashMap<MyState, MyAction>> returnList = 
         new ArrayList<HashMap<MyState,MyAction>>();
 
-      //Initialize all state values to 0 PreviousU contains the values
-      //from the previous iteration of the large loop below
+      // Initialize all state values to 0 PreviousU contains the values
+      // from the previous iteration of the large loop below
       for (MyState s : knownStates) {
         PreviousU.put(s, 0.0);
       }
+
       PreviousU.put(new MyState(null, true), 0.0);
 
       HashSet<MyState> knownAndS0 = (HashSet<MyState>) knownStates.clone();
       knownAndS0.add(new MyState(null, true));
 
-      for(int i = 0; i < T; i++) {
+      for (int i = 0; i < T; i++) {
         HashMap<MyState, MyAction> policy = new HashMap<MyState, MyAction>();
 
         for (MyState s : knownAndS0) {
@@ -151,10 +155,10 @@ class MDP {
           double bestValue = Double.MAX_VALUE * -1.0;
           MyAction bestAction = null;
 
-          for(MyAction a : getActions(s)) {
+          for (MyAction a : getActions(s)) {
             double currentValue = 0;
 
-            for(MyStateProbability msp : getProbabilities(s, a)) {
+            for (MyStateProbability msp : getProbabilities(s, a)) {
               if (knownStates.contains(msp.state)) {
                 currentValue += msp.value * PreviousU.get(msp.state);
               } else if (rewardExploration) {
