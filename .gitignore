@@ -1,5 +1,6 @@
 # Java #
 
+*.jar
 *.class
 
 # Intellij #
