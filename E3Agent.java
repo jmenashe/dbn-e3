@@ -15,7 +15,7 @@ import org.rlcommunity.rlglue.codec.taskspec.ranges.IntRange;
 import org.rlcommunity.rlglue.codec.taskspec.ranges.DoubleRange;
 
 public class E3Agent implements AgentInterface {
-  private boolean debug = true;
+  private boolean debug = false;
   private HashMap<MyStateAction, HashMap<MyState, Integer>> stateActionStateVisitCounts;
   private HashMap<MyState, HashMap<MyAction,Integer>> stateActionVisitCounts;
   private HashMap<MyState, Integer> stateVisitCounts;
@@ -29,7 +29,7 @@ public class E3Agent implements AgentInterface {
   private ArrayList<HashMap<MyState, MyAction>> explorePolicy;
   private ArrayList<HashMap<MyState, MyAction>> exploitPolicy;
 
-  private int mixingTime = 1;
+  private int mixingTime = 6;
 
   private Random randGenerator = new Random();
   private Action lastAction;
@@ -115,7 +115,7 @@ public class E3Agent implements AgentInterface {
   //Obviously not done
   //TODO: This
   private int findStateKnownLimit() {
-	return 20;
+	return 8;
   }
   
   //fairly untested
@@ -260,12 +260,13 @@ public class E3Agent implements AgentInterface {
       exploitCount = 0;
       return balancedWandering(currentState);
     } 
+
+    exploitPolicy = 
+      mdp.valueIterate(mixingTime, discountFactor, false);
+    explorePolicy = 
+      mdp.valueIterate(mixingTime, discountFactor, true);
     //If known state and not currently exploring or exploiting
-    else if (exploreCount == 0 && exploitCount == 0) {
-      exploitPolicy = 
-        mdp.valueIterate(mixingTime, discountFactor, false);
-      explorePolicy = 
-        mdp.valueIterate(mixingTime, discountFactor, true);
+    if (exploreCount == 0 && exploitCount == 0) {
 
       //if exploration seems beneficial
       double chanceToExplore = chanceToExplore(explorePolicy, currentState);
@@ -281,24 +282,21 @@ public class E3Agent implements AgentInterface {
     } 
     //If we are currently exploring, or have just decided to start exploring
     if (exploreCount > 0) {
-	  assert(exploitCount == 0);
 	  exploreCount--;
-	  return exploitPolicy.get(exploitPolicy.size()-1).get(currentState);
+	  System.out.println("exploring");
+	  return explorePolicy.get(explorePolicy.size()-1).get(currentState);
 
     } 
     //If we are currently exploiting, or have just decided to start exploiting 
     if (exploitCount > 0) {
-      assert(exploreCount == 0);
       exploitCount--;
-      if (exploitPolicy == null)
-    	  System.out.println("buff2");
-      return exploitPolicy.get(explorePolicy.size()-1).get(currentState);
+      return exploitPolicy.get(exploitPolicy.size()-1).get(currentState);
       
 	}    
     
     //at this point, we should have checked all possibilities - balanced wandering, 
     //exploration, and exploitation. 
-    assert(false);
+    
     return null;
   }
 
@@ -331,6 +329,9 @@ public class E3Agent implements AgentInterface {
 	logThis(previousState, previousAction, currentState, reward);
 	previousAction = findAction(currentState);
 	previousState = currentState;
+	if (previousAction == null) {
+		int a = 2/0;
+	}
 	Action returnAction = new Action(previousAction.action.length, 0);
 	returnAction.intArray = previousAction.action;
     return returnAction;
@@ -371,7 +372,7 @@ public class E3Agent implements AgentInterface {
     MyAction action1 = new MyAction(foo);
     MyAction action2 = new MyAction(bar);
 
-    mdp.setProbability(state1, action1, state2, 0.4);
+    /*mdp.setProbability(state1, action1, state2, 0.4);
     mdp.setProbability(state1, action1, state1, 0.6);
     mdp.setProbability(state1, action2, state1, 0.3);
     mdp.setProbability(state1, action2, state2, 0.7);
@@ -386,28 +387,28 @@ public class E3Agent implements AgentInterface {
     mdp.setProbability(state4, action1, state4, 0.6);
     mdp.setProbability(state4, action1, state3, 0.4);
     mdp.setProbability(state4, action2, state3, 0.6);
-    mdp.setProbability(state4, action2, state4, 0.4);
+    mdp.setProbability(state4, action2, state4, 0.4);*/
     
-    /*mdp.setProbability(state1, action1, state1, 1);
+    mdp.setProbability(state1, action1, state1, 1);
     mdp.setProbability(state1, action2, state2, 1);
     mdp.setProbability(state2, action1, state1, 1);
     mdp.setProbability(state2, action2, state3, 1);
     mdp.setProbability(state3, action1, state2, 1);
     mdp.setProbability(state3, action2, state4, 1);
     mdp.setProbability(state4, action1, state3, 1);
-    mdp.setProbability(state4, action2, state4, 1);*/
+    mdp.setProbability(state4, action2, state4, 1);
     
     
     mdp.setReward(state1, 1.0);
     mdp.setReward(state2, 2.0);
-    mdp.setReward(state3, 3.0);
+    mdp.setReward(state3, 7.0);
     mdp.setReward(state4, 4.0);
     mdp.addToKnownStates(state1);
     mdp.addToKnownStates(state2);
     mdp.addToKnownStates(state3);
-    //mdp.addToKnownStates(state4);
+    mdp.addToKnownStates(state4);
     ArrayList<HashMap<MyState,MyAction>> policy = 
-      mdp.valueIterate(4, 1, true);
+      mdp.valueIterate(6, 1, false);
     int i = 0;
     for(HashMap<MyState,MyAction> hm : policy) {
       System.out.println("i: " + i++);
@@ -419,7 +420,7 @@ public class E3Agent implements AgentInterface {
     this.mdp = mdp;
     mixingTime = 3;
     
-    findAction(state2);
+    //findAction(state2);
   }
   
   public void test2() {
@@ -457,7 +458,7 @@ public class E3Agent implements AgentInterface {
     //AgentLoader theLoader=new AgentLoader(new E3Agent());
     //theLoader.run();
 
-    new E3Agent().test2();
+    new E3Agent().test();
   }
 
 }

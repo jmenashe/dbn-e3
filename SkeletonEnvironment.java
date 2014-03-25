@@ -100,7 +100,7 @@ public class SkeletonEnvironment implements EnvironmentInterface {
         if(thisAction.intArray[0]==1)
             currentState = (currentState % 6 == 5 ? currentState : currentState + 1);
         if(thisAction.intArray[0]==2)
-            currentState = (currentState + 6) % 36;
+            currentState = (currentState > 29 ? currentState : currentState + 6);
         if(thisAction.intArray[0]==3)
             currentState = (currentState < 6 ? currentState : currentState - 6);
         

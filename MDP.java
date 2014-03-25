@@ -29,9 +29,9 @@ class MDP {
    */
   public MDP() {
     transitionProbabilities = 
-      new HashMap<MyState, HashMap<MyAction, HashSet<MyStateProbability>>>();
+      new HashMap<>();
 
-    rewards = new HashMap<MyState, Double>();
+    rewards = new HashMap<>();
     knownStates = new HashSet<MyState>();
   }
 
@@ -230,11 +230,15 @@ class MDP {
         previousU.put(s, 0.0);
       }
 
+      
+      
       previousU.put(new MyState(null, true), 0.0);
       //TODO: is this really needed - maybe just use knownStates?
       HashSet<MyState> knownAndS0 = (HashSet<MyState>) knownStates.clone();
       knownAndS0.add(new MyState(null, true));
+
       //Go to T, since we're finding the T-step policy
+      
       for (int i = 0; i < T; i++) {
         HashMap<MyState, MyAction> policy = new HashMap<MyState, MyAction>();
 

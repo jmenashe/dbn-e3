@@ -68,7 +68,7 @@ public class SkeletonExperiment {
 
         System.out.println("\n\n----------Running a few episodes----------");
         for (int i = 0; i < 1; i++)
-        	runEpisode(120);
+        	runEpisode(1000);
         
 
         runEpisode(1);
