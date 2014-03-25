@@ -15,8 +15,10 @@ import org.rlcommunity.rlglue.codec.taskspec.ranges.IntRange;
 import org.rlcommunity.rlglue.codec.taskspec.ranges.DoubleRange;
 
 public class E3Agent implements AgentInterface {
-  private boolean debug = false;
-  private HashMap<MyState, HashMap<MyAction,Integer>> StateActionVisitCounts;
+  private boolean debug = true;
+  private HashMap<MyStateAction, HashMap<MyState, Integer>> stateActionStateVisitCounts;
+  private HashMap<MyState, HashMap<MyAction,Integer>> stateActionVisitCounts;
+  private HashMap<MyState, Integer> stateVisitCounts;
   //hackish
   private MyAction[] allActions;
 
@@ -33,12 +35,11 @@ public class E3Agent implements AgentInterface {
   private Action lastAction;
   private Observation lastObservation;
   private MDP mdp;
-
-  int obsRangeMin;
-  int obsRangeMax;
-  int actRangeMin;
-  int actRangeMax;
-
+  
+  private MyState previousState;
+  private MyAction previousAction;
+  
+  
   public void agent_init(String taskSpecification) {
     TaskSpec theTaskSpec = new TaskSpec(taskSpecification);
 
@@ -55,10 +56,6 @@ public class E3Agent implements AgentInterface {
     DoubleRange theRewardRange = theTaskSpec.getRewardRange();
     System.out.println("Reward range is: "+theRewardRange.getMin()+" to "+theRewardRange.getMax());
 
-    actRangeMax = theActRange.getMax();
-    actRangeMin = theActRange.getMin();
-    obsRangeMax = theObsRange.getMax();
-    obsRangeMin = theObsRange.getMin();
 
     mdp = new MDP();
 
@@ -70,38 +67,112 @@ public class E3Agent implements AgentInterface {
     }
   }
 
+  /**
+   * This should return the available actions from the given state.
+   * @param currentState The state from which the set of actions are sought
+   * @return The possible actioins from currentState
+   */
   private MyAction[] getAllActions(MyState currentState) {
     return allActions;
   }
 
 
+  /**
+   * Finds the so far least taken action from a given state. 
+   * @param currentState The state from which the action is to be taken
+   * @return The least taken action from currentState
+   */
   private MyAction balancedWandering(MyState currentState) {
     MyAction leastTriedAction = null;
     int leastTriedCount = Integer.MAX_VALUE;
     MyAction[] actions = getAllActions(currentState);
-    HashMap<MyAction, Integer> theMap = StateActionVisitCounts.get(currentState);
-
+    HashMap<MyAction, Integer> theMap = stateActionVisitCounts.get(currentState);
+    //if no action has been taken from this state before
     if (theMap == null) {
-      return actions[0];
+        System.out.println("balancedWandering: no action taken from state " +  
+          currentState.state[0]);
+    	return actions[0];
+      
     }
 
     for (MyAction a : actions) {
       Integer currentCount = theMap.get(a);
+      System.out.println("balancedWandering investigating: action: " + a.action[0] + 
+    		  " count: " + currentCount + " from state " + currentState.state[0]);
+      //if this action has not been taken before, try it now
       if (currentCount == null) {
+    	System.out.println("have not tried action " + a.action[0]);
         return a;
       } else if (currentCount < leastTriedCount) {
         leastTriedCount = currentCount;
         leastTriedAction = a;
       }
     }
-
+    
     return leastTriedAction;
   }
 
+  //Obviously not done
+  //TODO: This
+  private int findStateKnownLimit() {
+	return 20;
+  }
+  
+  //fairly untested
   private void logThis(MyState from, MyAction action, MyState to, double reward) {
-    HashMap<MyAction, Integer> theMap = StateActionVisitCounts.get(from);
+    //Increase state visit count
+	Integer stateVisitCount = stateVisitCounts.get(to);
+	stateVisitCount = stateVisitCount == null ? 1 : stateVisitCount + 1;
+	stateVisitCounts.put(to, stateVisitCount);
+	if (stateVisitCount > findStateKnownLimit()) {
+	  mdp.addToKnownStates(to);
+	}
+	
+	//Increase state-action visit count
+	HashMap<MyAction, Integer> theMap = stateActionVisitCounts.get(from);
+    if(theMap == null) {
+      theMap = new HashMap<MyAction, Integer>();
+      stateActionVisitCounts.put(from, theMap);
+    }
+    Integer stateActionCount = theMap.get(action);
+    stateActionCount = stateActionCount == null ? 1 : stateActionCount + 1; 
+    theMap.put(action, stateActionCount);
+    
+    //Increase state-action-state visit count
+    
+    MyStateAction sa = new MyStateAction(from, action);
+    HashMap<MyState, Integer> theOtherMap = stateActionStateVisitCounts.get(sa);
+    
+    if (theOtherMap == null) {
+      theOtherMap = new HashMap<MyState, Integer>();
+      stateActionStateVisitCounts.put(sa, theOtherMap);
+    }
+    Integer stateActionStatecount = theOtherMap.get(to); 
+    theOtherMap.put(to, stateActionStatecount == null ? 1: stateActionStatecount + 1);
+    //Update all probabilities for (from,action)
+    for(Entry<MyState, Integer> e : theOtherMap.entrySet()) {
+//      System.out.println("Updating from: " + from.state[0] + " action: " + action.action[0] +
+//    		  " to: " + e.getKey().state[0] + " value: " +((double)e.getValue()) / stateActionCount);
+      mdp.setProbability(from, action, e.getKey(),((double)e.getValue()) / stateActionCount);
+    }
+    
+    //Update reward
+    
+    Double oldReward = mdp.getActualReward(to);
+    oldReward = oldReward == null ? 0 : oldReward;
+    mdp.setReward(to, (oldReward * (stateVisitCount - 1) + reward) / stateVisitCount);
+    
   }
 
+  /**
+   * Finds the probability that a certain policy will put the agent in an 
+   * unknown state, when starting in a certain state, within the mixing time
+   * of the MDP  
+   * @param policy The policy to execute
+   * @param startingState The state to start from
+   * @return The probability of ending up in an unknown state 
+   */
+  @SuppressWarnings("unchecked")
   private double chanceToExplore(
       ArrayList<HashMap<MyState, MyAction>> policy, 
       MyState startingState
@@ -109,6 +180,7 @@ public class E3Agent implements AgentInterface {
     HashMap<MyState, Double> probabilities = new HashMap<MyState, Double>();
     HashMap<MyState, Double> newProbabilities = new HashMap<MyState, Double>();
 
+    //The starting probabilities are 1 for unknown states and 0 for known states
     for (MyState state : mdp.transitionProbabilities.keySet()) {
       if (!mdp.isKnown(state)) {
         probabilities.put(state, 1.0);
@@ -116,74 +188,156 @@ public class E3Agent implements AgentInterface {
         probabilities.put(state, 0.0);
       }
     }
-
+    //Only look ahead one mixing time (be careful when considering the direction
+    //the index i changes - it may not seem intuitive to start at 0 and end at 
+    //the mixing time.)
     for (int i = 0; i < mixingTime; i++) {
       for (MyState from : mdp.transitionProbabilities.keySet()) {
-        if (!mdp.isKnown(from)) {
+        //if this is a known state, the probability of reaching a known state is 1
+    	if (!mdp.isKnown(from)) {
           newProbabilities.put(from, 1.0);
-        } else {
+        } 
+    	//otherwise calculate the probability of ending up in a known state, using
+    	//dynamic programming (memoization)
+    	else {
           double newProb = 0;
           //TODO: null pointers? (Should not happen!)
+          if (debug) {
+            System.out.println("inner loop, state: " + from.state[0] +
+              " action: " + policy.get(i).get(from).action[0]);
+          }
           for (MyStateProbability msp : 
-              mdp.getActualProbabilities(from, policy.get(i).get(from))) {
+              mdp.getActualProbabilities(from, policy.get(policy.size()-1).get(from))) {
             newProb += probabilities.get(msp.state) * msp.value;
+            if (debug) {
+              System.out.println("dp prob: " + probabilities.get(msp.state) + 
+                " transition prob " + msp.value);
+            }
           }
           newProbabilities.put(from,newProb);
         }
       }
-
-      for (MyState state : newProbabilities.keySet()) {
-        probabilities.put(state, newProbabilities.get(state));
+      
+      //Set up for next iteration
+      probabilities = (HashMap<MyState,Double>)newProbabilities.clone();
+      
+     
+      if (debug) {
+        System.out.println(i);
+        for(Entry<MyState,Double> e : probabilities.entrySet()) {
+          System.out.println("State: " + e.getKey().state[0] + " value: " + 
+            e.getValue());
+        }
+        System.out.println();
       }
     }
 
     return probabilities.get(startingState);
   }
 
+  /**
+   * This should return the limit for the probability of finding an unknown 
+   * state within the mixing time, above which it is preferable to explore 
+   * rather than exploit. 
+   * @return A limit for the probability when it is more preferable to explore 
+   * rather than exploit. 
+   */
+  public double getExplorationChanceLimit() {
+	  //TODO: This should be a formula. Look it up!
+	  return 0.20;
+  }
+  
+  /**
+   * Finds the action to take from the given state. 
+   * @param currentState The state from which an action is to be taken
+   * @return The action to take
+   */
   public MyAction findAction(MyState currentState) {
-    MyAction theAction = null;
-
     // Balanced wandering if unknown state!
     if (!mdp.isKnown(currentState)) {
-      theAction = balancedWandering(currentState);
-
-    } else if (exploreCount == 0 && exploitCount == 0) {
-      ArrayList<HashMap<MyState, MyAction>> exploitPolicy = 
-        mdp.policyIterate(mixingTime, discountFactor, false, currentState);
-      ArrayList<HashMap<MyState, MyAction>> explorePolicy = 
-        mdp.policyIterate(mixingTime, discountFactor, true, currentState);
+      System.out.println("findAction: starting balanced wandering");
+      exploreCount = 0;
+      exploitCount = 0;
+      return balancedWandering(currentState);
+    } 
+    //If known state and not currently exploring or exploiting
+    else if (exploreCount == 0 && exploitCount == 0) {
+      exploitPolicy = 
+        mdp.valueIterate(mixingTime, discountFactor, false);
+      explorePolicy = 
+        mdp.valueIterate(mixingTime, discountFactor, true);
 
       //if exploration seems beneficial
       double chanceToExplore = chanceToExplore(explorePolicy, currentState);
       System.out.println("Chance to explore: " + chanceToExplore);
-      if (true) {
+      if (chanceToExplore > getExplorationChanceLimit()) {
         System.out.println("Starting exploration");
+        exploreCount = mixingTime;
       } else {
         // if exploitation seems beneficial
-        System.out.println("Starting expliotation");
+        System.out.println("Starting exploitation");
+        exploitCount = mixingTime;
       }    		
-    } else {
-      if (exploreCount > 0) {
-        // Already exploring
-      } else {
-        // Already exploiting
-      }
+    } 
+    //If we are currently exploring, or have just decided to start exploring
+    if (exploreCount > 0) {
+	  assert(exploitCount == 0);
+	  exploreCount--;
+	  return exploitPolicy.get(exploitPolicy.size()-1).get(currentState);
 
-    }
-
-    return theAction;
+    } 
+    //If we are currently exploiting, or have just decided to start exploiting 
+    if (exploitCount > 0) {
+      assert(exploreCount == 0);
+      exploitCount--;
+      if (exploitPolicy == null)
+    	  System.out.println("buff2");
+      return exploitPolicy.get(explorePolicy.size()-1).get(currentState);
+      
+	}    
+    
+    //at this point, we should have checked all possibilities - balanced wandering, 
+    //exploration, and exploitation. 
+    assert(false);
+    return null;
   }
 
+  private void initvars() {
+	mdp = new MDP();
+    stateActionStateVisitCounts = new HashMap<MyStateAction, HashMap<MyState, Integer>>();
+	stateActionVisitCounts = new HashMap<MyState, HashMap<MyAction, Integer>> (); 
+	stateVisitCounts = new HashMap<MyState, Integer>();
+  }
+  
   public Action agent_start(Observation observation) {
-    return null;
+	initvars();
+	MyState startingState = new MyState(observation.intArray,false);
+	stateVisitCounts.put(startingState, 1);
+	MyAction action = findAction(startingState);
+	Action returnAction = new Action(action.action.length, 0);
+	returnAction.intArray = action.action;
+	previousAction = action;
+	previousState = startingState;
+    return returnAction;
   }
-
+ 
   public Action agent_step(double reward, Observation observation) {
-    return null;
+	
+	MyState currentState = new MyState(observation.intArray, false);
+	System.out.println("logging:  previous state: " + previousState.state[0] + 
+			" previousAction: " + previousAction.action[0] + 
+			" currentState: " + currentState.state[0] + 
+			" reward:" + reward);
+	logThis(previousState, previousAction, currentState, reward);
+	previousAction = findAction(currentState);
+	previousState = currentState;
+	Action returnAction = new Action(previousAction.action.length, 0);
+	returnAction.intArray = previousAction.action;
+    return returnAction;
   }
 
   public void agent_end(double reward) {
-
+    
   }
 
   public void agent_cleanup() {
@@ -199,10 +353,6 @@ public class E3Agent implements AgentInterface {
     return "I don't know how to respond to your message";
   }
 
-  /**
-   * This is a trick we can use to make the agent easily loadable.
-   * @param args
-   */
 
   public void test() {
     MDP mdp = new MDP();
@@ -237,16 +387,27 @@ public class E3Agent implements AgentInterface {
     mdp.setProbability(state4, action1, state3, 0.4);
     mdp.setProbability(state4, action2, state3, 0.6);
     mdp.setProbability(state4, action2, state4, 0.4);
+    
+    /*mdp.setProbability(state1, action1, state1, 1);
+    mdp.setProbability(state1, action2, state2, 1);
+    mdp.setProbability(state2, action1, state1, 1);
+    mdp.setProbability(state2, action2, state3, 1);
+    mdp.setProbability(state3, action1, state2, 1);
+    mdp.setProbability(state3, action2, state4, 1);
+    mdp.setProbability(state4, action1, state3, 1);
+    mdp.setProbability(state4, action2, state4, 1);*/
+    
+    
     mdp.setReward(state1, 1.0);
     mdp.setReward(state2, 2.0);
     mdp.setReward(state3, 3.0);
     mdp.setReward(state4, 4.0);
-    //mdp.addToKnownStates(state1);
+    mdp.addToKnownStates(state1);
     mdp.addToKnownStates(state2);
     mdp.addToKnownStates(state3);
-    mdp.addToKnownStates(state4);
+    //mdp.addToKnownStates(state4);
     ArrayList<HashMap<MyState,MyAction>> policy = 
-      mdp.policyIterate(3, 1, true, state4);
+      mdp.valueIterate(4, 1, true);
     int i = 0;
     for(HashMap<MyState,MyAction> hm : policy) {
       System.out.println("i: " + i++);
@@ -256,15 +417,47 @@ public class E3Agent implements AgentInterface {
       }
     }
     this.mdp = mdp;
-    mixingTime = 2;
-    findAction(state1);
+    mixingTime = 3;
+    
+    findAction(state2);
+  }
+  
+  public void test2() {
+    int[] apa = {1};
+    int[] bepa = {2};
+    int[] cepa = {3};
+    int[] depa = {4};
+
+    int[] foo = {1};
+    int[] bar = {2};
+    MyState state1 = new MyState(apa, false);
+    MyState state2 = new MyState(bepa, false);
+    MyState state3 = new MyState(cepa, false);
+    MyState state4 = new MyState(depa, false);
+
+    MyAction action1 = new MyAction(foo);
+    MyAction action2 = new MyAction(bar);
+    initvars();
+    logThis(state1,action1,state2,2.0);
+    logThis(state1,action1,state2,2.0);
+    logThis(state1,action1,state2,2.0);
+    logThis(state1,action1,state3,2.0);
+    logThis(state1,action1,state3,2.0);
+    logThis(state1,action1,state2,2.0);
+    
+    
+    for(MyStateProbability msp : mdp.getActualProbabilities(state1, action1)) {
+    	System.out.println("State: " + msp.state.state[0] + " prob: " + 
+    			msp.value);
+    }
+    
   }
 
   public static void main(String[] args){
     //AgentLoader theLoader=new AgentLoader(new E3Agent());
     //theLoader.run();
 
-    new E3Agent().test();
+    new E3Agent().test2();
   }
 
 }

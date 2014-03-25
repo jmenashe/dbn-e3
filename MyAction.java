@@ -1,5 +1,5 @@
 class MyAction {
-  private int[] action;
+  public int[] action;
 
   public MyAction(int[] theAction) {
     action = new int[theAction.length];
