@@ -35,11 +35,11 @@ public class E3Agent implements AgentInterface {
   private Action lastAction;
   private Observation lastObservation;
   private MDP mdp;
-  
+
   private MyState previousState;
   private MyAction previousAction;
-  
-  
+
+
   public void agent_init(String taskSpecification) {
     TaskSpec theTaskSpec = new TaskSpec(taskSpecification);
 
@@ -73,6 +73,7 @@ public class E3Agent implements AgentInterface {
    * @return The possible actioins from currentState
    */
   private MyAction[] getAllActions(MyState currentState) {
+    // TODO: This
     return allActions;
   }
 
@@ -89,48 +90,48 @@ public class E3Agent implements AgentInterface {
     HashMap<MyAction, Integer> theMap = stateActionVisitCounts.get(currentState);
     //if no action has been taken from this state before
     if (theMap == null) {
-        System.out.println("balancedWandering: no action taken from state " +  
+      System.out.println("balancedWandering: no action taken from state " +  
           currentState.state[0]);
-    	return actions[0];
-      
+      return actions[0];
+
     }
 
     for (MyAction a : actions) {
       Integer currentCount = theMap.get(a);
       System.out.println("balancedWandering investigating: action: " + a.action[0] + 
-    		  " count: " + currentCount + " from state " + currentState.state[0]);
+          " count: " + currentCount + " from state " + currentState.state[0]);
       //if this action has not been taken before, try it now
       if (currentCount == null) {
-    	System.out.println("have not tried action " + a.action[0]);
+        System.out.println("have not tried action " + a.action[0]);
         return a;
       } else if (currentCount < leastTriedCount) {
         leastTriedCount = currentCount;
         leastTriedAction = a;
       }
     }
-    
+
     return leastTriedAction;
   }
 
   //Obviously not done
   //TODO: This
   private int findStateKnownLimit() {
-	  //epsilon / (2*Gtmax)
-	return 16;
+    //epsilon / (2*Gtmax)
+    return 16;
   }
-  
+
   //fairly untested
   private void logThis(MyState from, MyAction action, MyState to, double reward) {
     //Increase state visit count
-	Integer stateVisitCount = stateVisitCounts.get(to);
-	stateVisitCount = stateVisitCount == null ? 1 : stateVisitCount + 1;
-	stateVisitCounts.put(to, stateVisitCount);
-	if (stateVisitCount > findStateKnownLimit()) {
-	  mdp.addToKnownStates(to);
-	}
-	
-	//Increase state-action visit count
-	HashMap<MyAction, Integer> theMap = stateActionVisitCounts.get(from);
+    Integer stateVisitCount = stateVisitCounts.get(to);
+    stateVisitCount = stateVisitCount == null ? 1 : stateVisitCount + 1;
+    stateVisitCounts.put(to, stateVisitCount);
+    if (stateVisitCount > findStateKnownLimit()) {
+      mdp.addToKnownStates(to);
+    }
+
+    //Increase state-action visit count
+    HashMap<MyAction, Integer> theMap = stateActionVisitCounts.get(from);
     if(theMap == null) {
       theMap = new HashMap<MyAction, Integer>();
       stateActionVisitCounts.put(from, theMap);
@@ -138,12 +139,12 @@ public class E3Agent implements AgentInterface {
     Integer stateActionCount = theMap.get(action);
     stateActionCount = stateActionCount == null ? 1 : stateActionCount + 1; 
     theMap.put(action, stateActionCount);
-    
+
     //Increase state-action-state visit count
-    
+
     MyStateAction sa = new MyStateAction(from, action);
     HashMap<MyState, Integer> theOtherMap = stateActionStateVisitCounts.get(sa);
-    
+
     if (theOtherMap == null) {
       theOtherMap = new HashMap<MyState, Integer>();
       stateActionStateVisitCounts.put(sa, theOtherMap);
@@ -152,17 +153,17 @@ public class E3Agent implements AgentInterface {
     theOtherMap.put(to, stateActionStatecount == null ? 1: stateActionStatecount + 1);
     //Update all probabilities for (from,action)
     for(Entry<MyState, Integer> e : theOtherMap.entrySet()) {
-//      System.out.println("Updating from: " + from.state[0] + " action: " + action.action[0] +
-//    		  " to: " + e.getKey().state[0] + " value: " +((double)e.getValue()) / stateActionCount);
+      //      System.out.println("Updating from: " + from.state[0] + " action: " + action.action[0] +
+      //    		  " to: " + e.getKey().state[0] + " value: " +((double)e.getValue()) / stateActionCount);
       mdp.setProbability(from, action, e.getKey(),((double)e.getValue()) / stateActionCount);
     }
-    
+
     //Update reward
-    
+
     Double oldReward = mdp.getActualReward(to);
     oldReward = oldReward == null ? 0 : oldReward;
     mdp.setReward(to, (oldReward * (stateVisitCount - 1) + reward) / stateVisitCount);
-    
+
   }
 
   /**
@@ -177,7 +178,7 @@ public class E3Agent implements AgentInterface {
   private double chanceToExplore(
       ArrayList<HashMap<MyState, MyAction>> policy, 
       MyState startingState
-  ) {
+      ) {
     HashMap<MyState, Double> probabilities = new HashMap<MyState, Double>();
     HashMap<MyState, Double> newProbabilities = new HashMap<MyState, Double>();
 
@@ -195,46 +196,46 @@ public class E3Agent implements AgentInterface {
     for (int i = 0; i < horizonTime; i++) {
       for (MyState from : mdp.transitionProbabilities.keySet()) {
         //if this is a known state, the probability of reaching a known state is 1
-    	if (!mdp.isKnown(from)) {
+        if (!mdp.isKnown(from)) {
           newProbabilities.put(from, 1.0);
         } 
-    	//otherwise calculate the probability of ending up in a known state, using
-    	//dynamic programming (memoization)
-    	else {
+        //otherwise calculate the probability of ending up in a known state, using
+        //dynamic programming (memoization)
+        else {
           double newProb = 0;
           //TODO: null pointers? (Should not happen!)
           if (debug) {
             System.out.println("inner loop, state: " + from.state[0] +
-              " action: " + policy.get(i).get(from).action[0]);
+                " action: " + policy.get(i).get(from).action[0]);
           }
           for (MyStateProbability msp : 
               mdp.getActualProbabilities(from, policy.get(policy.size()-1).get(from))) {
             newProb += probabilities.get(msp.state) * msp.value;
             if (debug) {
               System.out.println("dp prob: " + probabilities.get(msp.state) + 
-                " transition prob " + msp.value);
+                  " transition prob " + msp.value);
             }
-          }
+              }
           newProbabilities.put(from,newProb);
         }
       }
-      
+
       //Set up for next iteration
       probabilities = (HashMap<MyState,Double>)newProbabilities.clone();
-      
-     
+
+
       if (debug) {
         System.out.println(i);
         for(Entry<MyState,Double> e : probabilities.entrySet()) {
           System.out.println("State: " + e.getKey().state[0] + " value: " + 
-            e.getValue());
+              e.getValue());
         }
         System.out.println();
       }
     }
 
     return probabilities.get(startingState);
-  }
+      }
 
   /**
    * This should return the limit for the probability of finding an unknown 
@@ -244,10 +245,10 @@ public class E3Agent implements AgentInterface {
    * rather than exploit. 
    */
   public double getExplorationChanceLimit() {
-	  //TODO: This should be a formula. Look it up!
-	  return 0.20;
+    //TODO: This should be a formula. Look it up!
+    return 0.20;
   }
-  
+
   /**
    * Finds the action to take from the given state. 
    * @param currentState The state from which an action is to be taken
@@ -283,9 +284,9 @@ public class E3Agent implements AgentInterface {
     } 
     //If we are currently exploring, or have just decided to start exploring
     if (exploreCount > 0) {
-	  exploreCount--;
-	  System.out.println("exploring");
-	  return explorePolicy.get(explorePolicy.size()-1).get(currentState);
+      exploreCount--;
+      System.out.println("exploring");
+      return explorePolicy.get(explorePolicy.size()-1).get(currentState);
 
     } 
     //If we are currently exploiting, or have just decided to start exploiting 
@@ -293,54 +294,54 @@ public class E3Agent implements AgentInterface {
       exploitCount--;
       System.out.println("exploiting");
       return exploitPolicy.get(exploitPolicy.size()-1).get(currentState);
-      
-	}    
-    
+
+    }    
+
     //at this point, we should have checked all possibilities - balanced wandering, 
     //exploration, and exploitation. 
-    
+
     return null;
   }
 
   private void initvars() {
-	mdp = new MDP();
+    mdp = new MDP();
     stateActionStateVisitCounts = new HashMap<MyStateAction, HashMap<MyState, Integer>>();
-	stateActionVisitCounts = new HashMap<MyState, HashMap<MyAction, Integer>> (); 
-	stateVisitCounts = new HashMap<MyState, Integer>();
+    stateActionVisitCounts = new HashMap<MyState, HashMap<MyAction, Integer>> (); 
+    stateVisitCounts = new HashMap<MyState, Integer>();
   }
-  
+
   public Action agent_start(Observation observation) {
-	initvars();
-	MyState startingState = new MyState(observation.intArray,false);
-	stateVisitCounts.put(startingState, 1);
-	MyAction action = findAction(startingState);
-	Action returnAction = new Action(action.action.length, 0);
-	returnAction.intArray = action.action;
-	previousAction = action;
-	previousState = startingState;
+    initvars();
+    MyState startingState = new MyState(observation.intArray,false);
+    stateVisitCounts.put(startingState, 1);
+    MyAction action = findAction(startingState);
+    Action returnAction = new Action(action.action.length, 0);
+    returnAction.intArray = action.action;
+    previousAction = action;
+    previousState = startingState;
     return returnAction;
   }
- 
+
   public Action agent_step(double reward, Observation observation) {
-	
-	MyState currentState = new MyState(observation.intArray, false);
-	System.out.println("logging:  previous state: " + previousState.state[0] + 
-			" previousAction: " + previousAction.action[0] + 
-			" currentState: " + currentState.state[0] + 
-			" reward:" + reward);
-	logThis(previousState, previousAction, currentState, reward);
-	previousAction = findAction(currentState);
-	previousState = currentState;
-	if (previousAction == null) {
-		int a = 2/0;
-	}
-	Action returnAction = new Action(previousAction.action.length, 0);
-	returnAction.intArray = previousAction.action;
+
+    MyState currentState = new MyState(observation.intArray, false);
+    System.out.println("logging:  previous state: " + previousState.state[0] + 
+        " previousAction: " + previousAction.action[0] + 
+        " currentState: " + currentState.state[0] + 
+        " reward:" + reward);
+    logThis(previousState, previousAction, currentState, reward);
+    previousAction = findAction(currentState);
+    previousState = currentState;
+    if (previousAction == null) {
+      int a = 2/0;
+    }
+    Action returnAction = new Action(previousAction.action.length, 0);
+    returnAction.intArray = previousAction.action;
     return returnAction;
   }
 
   public void agent_end(double reward) {
-    
+
   }
 
   public void agent_cleanup() {
@@ -375,22 +376,22 @@ public class E3Agent implements AgentInterface {
     MyAction action2 = new MyAction(bar);
 
     /*mdp.setProbability(state1, action1, state2, 0.4);
-    mdp.setProbability(state1, action1, state1, 0.6);
-    mdp.setProbability(state1, action2, state1, 0.3);
-    mdp.setProbability(state1, action2, state2, 0.7);
-    mdp.setProbability(state2, action1, state1, 0.6);
-    mdp.setProbability(state2, action1, state3, 0.4);
-    mdp.setProbability(state2, action2, state1, 0);
-    mdp.setProbability(state2, action2, state3, 1);
-    mdp.setProbability(state3, action1, state4, 0.6);
-    mdp.setProbability(state3, action1, state2, 0.4);
-    mdp.setProbability(state3, action2, state2, 0.6);
-    mdp.setProbability(state3, action2, state4, 0.4);
-    mdp.setProbability(state4, action1, state4, 0.6);
-    mdp.setProbability(state4, action1, state3, 0.4);
-    mdp.setProbability(state4, action2, state3, 0.6);
-    mdp.setProbability(state4, action2, state4, 0.4);*/
-    
+      mdp.setProbability(state1, action1, state1, 0.6);
+      mdp.setProbability(state1, action2, state1, 0.3);
+      mdp.setProbability(state1, action2, state2, 0.7);
+      mdp.setProbability(state2, action1, state1, 0.6);
+      mdp.setProbability(state2, action1, state3, 0.4);
+      mdp.setProbability(state2, action2, state1, 0);
+      mdp.setProbability(state2, action2, state3, 1);
+      mdp.setProbability(state3, action1, state4, 0.6);
+      mdp.setProbability(state3, action1, state2, 0.4);
+      mdp.setProbability(state3, action2, state2, 0.6);
+      mdp.setProbability(state3, action2, state4, 0.4);
+      mdp.setProbability(state4, action1, state4, 0.6);
+      mdp.setProbability(state4, action1, state3, 0.4);
+      mdp.setProbability(state4, action2, state3, 0.6);
+      mdp.setProbability(state4, action2, state4, 0.4);*/
+
     mdp.setProbability(state1, action1, state1, 1);
     mdp.setProbability(state1, action2, state2, 1);
     mdp.setProbability(state2, action1, state1, 1);
@@ -399,8 +400,8 @@ public class E3Agent implements AgentInterface {
     mdp.setProbability(state3, action2, state4, 1);
     mdp.setProbability(state4, action1, state3, 1);
     mdp.setProbability(state4, action2, state4, 1);
-    
-    
+
+
     mdp.setReward(state1, 1.0);
     mdp.setReward(state2, 2.0);
     mdp.setReward(state3, 7.0);
@@ -421,10 +422,10 @@ public class E3Agent implements AgentInterface {
     }
     this.mdp = mdp;
     horizonTime = 3;
-    
+
     //findAction(state2);
   }
-  
+
   public void test2() {
     int[] apa = {1};
     int[] bepa = {2};
@@ -447,13 +448,13 @@ public class E3Agent implements AgentInterface {
     logThis(state1,action1,state3,2.0);
     logThis(state1,action1,state3,2.0);
     logThis(state1,action1,state2,2.0);
-    
-    
+
+
     for(MyStateProbability msp : mdp.getActualProbabilities(state1, action1)) {
-    	System.out.println("State: " + msp.state.state[0] + " prob: " + 
-    			msp.value);
+      System.out.println("State: " + msp.state.state[0] + " prob: " + 
+          msp.value);
     }
-    
+
   }
 
   public static void main(String[] args){
