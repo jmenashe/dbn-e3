@@ -29,7 +29,7 @@ public class E3Agent implements AgentInterface {
   private ArrayList<HashMap<MyState, MyAction>> explorePolicy;
   private ArrayList<HashMap<MyState, MyAction>> exploitPolicy;
 
-  private int mixingTime = 6;
+  private int horizonTime = 10;
 
   private Random randGenerator = new Random();
   private Action lastAction;
@@ -115,7 +115,8 @@ public class E3Agent implements AgentInterface {
   //Obviously not done
   //TODO: This
   private int findStateKnownLimit() {
-	return 8;
+	  //epsilon / (2*Gtmax)
+	return 16;
   }
   
   //fairly untested
@@ -191,7 +192,7 @@ public class E3Agent implements AgentInterface {
     //Only look ahead one mixing time (be careful when considering the direction
     //the index i changes - it may not seem intuitive to start at 0 and end at 
     //the mixing time.)
-    for (int i = 0; i < mixingTime; i++) {
+    for (int i = 0; i < horizonTime; i++) {
       for (MyState from : mdp.transitionProbabilities.keySet()) {
         //if this is a known state, the probability of reaching a known state is 1
     	if (!mdp.isKnown(from)) {
@@ -262,9 +263,9 @@ public class E3Agent implements AgentInterface {
     } 
 
     exploitPolicy = 
-      mdp.valueIterate(mixingTime, discountFactor, false);
+      mdp.valueIterate(horizonTime, discountFactor, false);
     explorePolicy = 
-      mdp.valueIterate(mixingTime, discountFactor, true);
+      mdp.valueIterate(horizonTime, discountFactor, true);
     //If known state and not currently exploring or exploiting
     if (exploreCount == 0 && exploitCount == 0) {
 
@@ -273,11 +274,11 @@ public class E3Agent implements AgentInterface {
       System.out.println("Chance to explore: " + chanceToExplore);
       if (chanceToExplore > getExplorationChanceLimit()) {
         System.out.println("Starting exploration");
-        exploreCount = mixingTime;
+        exploreCount = horizonTime;
       } else {
         // if exploitation seems beneficial
         System.out.println("Starting exploitation");
-        exploitCount = mixingTime;
+        exploitCount = horizonTime;
       }    		
     } 
     //If we are currently exploring, or have just decided to start exploring
@@ -290,6 +291,7 @@ public class E3Agent implements AgentInterface {
     //If we are currently exploiting, or have just decided to start exploiting 
     if (exploitCount > 0) {
       exploitCount--;
+      System.out.println("exploiting");
       return exploitPolicy.get(exploitPolicy.size()-1).get(currentState);
       
 	}    
@@ -418,7 +420,7 @@ public class E3Agent implements AgentInterface {
       }
     }
     this.mdp = mdp;
-    mixingTime = 3;
+    horizonTime = 3;
     
     //findAction(state2);
   }

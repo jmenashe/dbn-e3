@@ -23,6 +23,8 @@
 * 
 */
 
+import java.util.Random;
+
 import org.rlcommunity.rlglue.codec.EnvironmentInterface;
 import org.rlcommunity.rlglue.codec.types.Action;
 import org.rlcommunity.rlglue.codec.types.Observation;
@@ -34,17 +36,11 @@ import org.rlcommunity.rlglue.codec.taskspec.ranges.IntRange;
 import org.rlcommunity.rlglue.codec.taskspec.ranges.DoubleRange;
 
 /**
- *  This is a very simple environment with discrete observations corresponding to states labeled {0,1,...,19,20}
-    The starting state is 10.
-
-    There are 2 actions = {0,1}.  0 decrements the state, 1 increments the state.
-
-    The problem is episodic, ending when state 0 or 20 is reached, giving reward -1 or +1, respectively.  The reward is 0 on 
-    all other steps.
- * @author Brian Tanner
+ * 
  */
 public class SkeletonEnvironment implements EnvironmentInterface {
     private int currentState=10;
+    private Random rand = new Random();
     
     private double[] rewards = {
     		0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
@@ -70,7 +66,7 @@ public class SkeletonEnvironment implements EnvironmentInterface {
 	//Specify that there will be an integer action [0,3]
         theTaskSpecObject.addDiscreteAction(new IntRange(0, 3));
 	//Specify the reward range [-1,1]
-        theTaskSpecObject.setRewardRange(new DoubleRange(-1, 1));
+        theTaskSpecObject.setRewardRange(new DoubleRange(-1, 5));
 
         String taskSpecString = theTaskSpecObject.toTaskSpec();
         TaskSpec.checkTaskSpec(taskSpecString);
@@ -94,23 +90,35 @@ public class SkeletonEnvironment implements EnvironmentInterface {
     public Reward_observation_terminal env_step(Action thisAction) {
         boolean episodeOver=false;
         double theReward=0.0d;
+        double chanceToNotOvershoot = 0.7;
         
-        if(thisAction.intArray[0]==0)
-            currentState = (currentState % 6 == 0 ? currentState : currentState -1);
-        if(thisAction.intArray[0]==1)
-            currentState = (currentState % 6 == 5 ? currentState : currentState + 1);
-        if(thisAction.intArray[0]==2)
-            currentState = (currentState > 29 ? currentState : currentState + 6);
-        if(thisAction.intArray[0]==3)
-            currentState = (currentState < 6 ? currentState : currentState - 6);
+        if(thisAction.intArray[0]==0) {
+        	do {
+        		currentState = (currentState % 6 == 0 ? currentState : currentState -1);
+        	}while(rand.nextDouble() > chanceToNotOvershoot) ;
+        } else  if(thisAction.intArray[0]==1) {
+        	do {
+        		currentState = (currentState % 6 == 5 ? currentState : currentState + 1);
+        	} while(rand.nextDouble() > chanceToNotOvershoot); 
+    	} else if (thisAction.intArray[0]==2) {
+    		do  {
+    			currentState = (currentState > 29 ? currentState : currentState + 6);
+    		} while(rand.nextDouble() > chanceToNotOvershoot);
+		} else if (thisAction.intArray[0]==3) {
+			do {
+				currentState = (currentState < 6 ? currentState : currentState - 6);
+			} while(rand.nextDouble() > chanceToNotOvershoot); 
+		}
         
         
                 
         Observation returnObservation=new Observation(1,0,0);
         returnObservation.intArray[0]=currentState;
         
+        double returnReward = rewards[currentState] + (rand.nextDouble()*2 - 1);
+        
         Reward_observation_terminal returnRewardObs=new Reward_observation_terminal(
-        		rewards[currentState],returnObservation,episodeOver);
+        		returnReward,returnObservation,episodeOver);
         return returnRewardObs;
     }
 
