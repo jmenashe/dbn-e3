@@ -105,8 +105,8 @@ public class E3Agent implements AgentInterface {
         if (theMap == null) {
             System.out.println("balancedWandering: no action taken from state "
                     + currentState.state[0]);
-            return actions[0];
 
+            return actions[0];
         }
 
         for (MyAction a : actions) {
@@ -126,10 +126,8 @@ public class E3Agent implements AgentInterface {
         return leastTriedAction;
     }
 
-    // Obviously not done
     // TODO: This
     private int findStateKnownLimit() {
-
         return knownStateLimit;
     }
 
@@ -212,6 +210,7 @@ public class E3Agent implements AgentInterface {
                 probabilities.put(state, 0.0);
             }
         }
+
         // Only look ahead one horizon time (be careful when considering the
         // direction
         // the index i changes - it may not seem intuitive to start at 0 and end
@@ -295,14 +294,10 @@ public class E3Agent implements AgentInterface {
             return balancedWandering(currentState);
         }
 
-        // TODO: these should not be run for every step. (need to store a copy
-        // of the set of known states when they are run.. ask daniel)
-        // TODO: Still do this
-        exploitPolicy = mdp.valueIterate(horizonTime, discountFactor, false);
-        explorePolicy = mdp.valueIterate(horizonTime, discountFactor, true);
-
         // If known state and not currently exploring or exploiting
         if (exploreCount == 0 && exploitCount == 0) {
+            exploitPolicy = mdp.valueIterate(horizonTime, discountFactor, false);
+            explorePolicy = mdp.valueIterate(horizonTime, discountFactor, true);
 
             // if exploration seems beneficial
             double chanceToExplore = chanceToExplore(explorePolicy,
