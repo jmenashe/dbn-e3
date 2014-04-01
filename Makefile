@@ -5,7 +5,7 @@ default: RunAll.class
 RunAll.class: RunAll.java
 	javac RunAll.java
 
-test:
+test: default
 	java RunAll
 
 clean:

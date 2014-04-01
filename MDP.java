@@ -265,7 +265,6 @@ class MDP {
         knownAndS0.add(new MyState(null, true));
 
         // Go to T, since we're finding the T-step policy
-
         for (int i = 0; i < T; i++) {
             HashMap<MyState, MyAction> policy = new HashMap<MyState, MyAction>();
 
