@@ -297,15 +297,19 @@ public class E3Agent implements AgentInterface {
 
         // TODO: these should not be run for every step. (need to store a copy
         // of the set of known states when they are run.. ask daniel)
+        // TODO: Still do this
         exploitPolicy = mdp.valueIterate(horizonTime, discountFactor, false);
         explorePolicy = mdp.valueIterate(horizonTime, discountFactor, true);
+
         // If known state and not currently exploring or exploiting
         if (exploreCount == 0 && exploitCount == 0) {
 
             // if exploration seems beneficial
             double chanceToExplore = chanceToExplore(explorePolicy,
                     currentState);
+
             System.out.println("Chance to explore: " + chanceToExplore);
+
             if (chanceToExplore > getExplorationChanceLimit()) {
                 System.out.println("Starting exploration");
                 exploreCount = horizonTime;
@@ -315,29 +319,29 @@ public class E3Agent implements AgentInterface {
                 exploitCount = horizonTime;
             }
         }
+
         // If we are currently exploring, or have just decided to start
         // exploring
         if (exploreCount > 0) {
             exploreCount--;
             System.out.println("exploring");
+
             return explorePolicy.get(explorePolicy.size() - 1)
                     .get(currentState);
-
         }
+
         // If we are currently exploiting, or have just decided to start
         // exploiting
         if (exploitCount > 0) {
             exploitCount--;
             System.out.println("exploiting");
+
             return exploitPolicy.get(exploitPolicy.size() - 1)
                     .get(currentState);
-
         }
 
         // at this point, we should have checked all possibilities - balanced
-        // wandering,
-        // exploration, and exploitation.
-
+        // wandering, exploration, and exploitation.
         return null;
     }
 
