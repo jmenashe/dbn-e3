@@ -44,4 +44,13 @@ class MyState {
     }
     return true;
   }
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder("State: [ ");
+	for(int i = 0; i < state.length; i++) {
+	  sb.append(state[i] + " ");
+	}
+	sb.append("]");
+	return sb.toString();
+  }
 }

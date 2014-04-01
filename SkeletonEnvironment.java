@@ -129,7 +129,7 @@ public class SkeletonEnvironment implements EnvironmentInterface {
         if(message.equals("what is your name?"))
             return "my name is Simple GridWorld Environment, Java edition!";
 
-	return "I don't know how to respond to your message";
+	    return "I don't know how to respond to your message";
     }
     
    /**
@@ -137,8 +137,8 @@ public class SkeletonEnvironment implements EnvironmentInterface {
      * @param args
      */
     public static void main(String[] args){
-        EnvironmentLoader theLoader=new EnvironmentLoader(new SkeletonEnvironment());
-        theLoader.run();
+      EnvironmentLoader theLoader=new EnvironmentLoader(new SkeletonEnvironment());
+      theLoader.run();
     }
 
 

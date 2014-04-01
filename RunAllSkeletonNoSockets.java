@@ -45,7 +45,7 @@ public class RunAllSkeletonNoSockets{
 		AgentInterface theAgent=new E3Agent();
 		
 		//Create the Environment
-		EnvironmentInterface theEnvironment=new SkeletonEnvironment();
+		EnvironmentInterface theEnvironment=new SysOpEnvironment();
 		
 		LocalGlue localGlueImplementation=new LocalGlue(theEnvironment,theAgent);
 		RLGlue.setGlue(localGlueImplementation);

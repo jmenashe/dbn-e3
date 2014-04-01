@@ -36,4 +36,14 @@ class MyAction {
     }
     return true;
   }		
+  
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder("Action: [ ");
+	for(int i = 0; i < action.length; i++) {
+	  sb.append(action[i] + " ");
+	}
+	sb.append("]");
+	return sb.toString();
+  }
 }

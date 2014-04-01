@@ -29,8 +29,11 @@ public class E3Agent implements AgentInterface {
   private ArrayList<HashMap<MyState, MyAction>> explorePolicy;
   private ArrayList<HashMap<MyState, MyAction>> exploitPolicy;
 
-  private int horizonTime = 10;
-
+  final private int horizonTime = 20;
+  //visit count until a state is known
+  final private int knownStateLimit = 100;
+  final private double explorationChanceLimit = 0.05;
+  
   private Random randGenerator = new Random();
   private Action lastAction;
   private Observation lastObservation;
@@ -44,7 +47,7 @@ public class E3Agent implements AgentInterface {
     TaskSpec theTaskSpec = new TaskSpec(taskSpecification);
 
     System.out.println("Skeleton agent parsed the task spec.");
-    System.out.println("Observation have "+theTaskSpec.getNumDiscreteObsDims()+" integer dimensions");
+    System.out.println("Observations have "+theTaskSpec.getNumDiscreteObsDims()+" integer dimensions");
     System.out.println("Actions have "+theTaskSpec.getNumDiscreteActionDims()+" integer dimensions");
 
     IntRange theObsRange = theTaskSpec.getDiscreteObservationRange(0);
@@ -56,11 +59,11 @@ public class E3Agent implements AgentInterface {
     DoubleRange theRewardRange = theTaskSpec.getRewardRange();
     System.out.println("Reward range is: "+theRewardRange.getMin()+" to "+theRewardRange.getMax());
 
-
     mdp = new MDP();
-
-    allActions = new MyAction[4];
-    for(int i = 0; i < 4; i++) {
+    
+    //Only consider one-dimensional actions
+    allActions = new MyAction[theActRange.getMax() - theActRange.getMin() + 1];
+    for(int i = theActRange.getMin(); i < theActRange.getMax() + 1; i++) {
       int[] temp = new int[1];
       temp[0] = i;
       allActions[i] = new MyAction(temp);
@@ -98,8 +101,8 @@ public class E3Agent implements AgentInterface {
 
     for (MyAction a : actions) {
       Integer currentCount = theMap.get(a);
-      System.out.println("balancedWandering investigating: action: " + a.action[0] + 
-          " count: " + currentCount + " from state " + currentState.state[0]);
+      System.out.println("balancedWandering investigating: " + a + 
+    		  " count: " + currentCount + " from " + currentState);
       //if this action has not been taken before, try it now
       if (currentCount == null) {
         System.out.println("have not tried action " + a.action[0]);
@@ -116,8 +119,8 @@ public class E3Agent implements AgentInterface {
   //Obviously not done
   //TODO: This
   private int findStateKnownLimit() {
-    //epsilon / (2*Gtmax)
-    return 16;
+
+	return knownStateLimit;
   }
 
   //fairly untested
@@ -168,7 +171,7 @@ public class E3Agent implements AgentInterface {
 
   /**
    * Finds the probability that a certain policy will put the agent in an 
-   * unknown state, when starting in a certain state, within the mixing time
+   * unknown state, when starting in a certain state, within the horizon time
    * of the MDP  
    * @param policy The policy to execute
    * @param startingState The state to start from
@@ -190,9 +193,9 @@ public class E3Agent implements AgentInterface {
         probabilities.put(state, 0.0);
       }
     }
-    //Only look ahead one mixing time (be careful when considering the direction
+    //Only look ahead one horizon time (be careful when considering the direction
     //the index i changes - it may not seem intuitive to start at 0 and end at 
-    //the mixing time.)
+    //the horizon time.)
     for (int i = 0; i < horizonTime; i++) {
       for (MyState from : mdp.transitionProbabilities.keySet()) {
         //if this is a known state, the probability of reaching a known state is 1
@@ -239,14 +242,15 @@ public class E3Agent implements AgentInterface {
 
   /**
    * This should return the limit for the probability of finding an unknown 
-   * state within the mixing time, above which it is preferable to explore 
+   * state within the horizon time, above which it is preferable to explore 
    * rather than exploit. 
    * @return A limit for the probability when it is more preferable to explore 
    * rather than exploit. 
    */
   public double getExplorationChanceLimit() {
-    //TODO: This should be a formula. Look it up!
-    return 0.20;
+
+	  //TODO: This should be a formula. Look it up!
+	  return explorationChanceLimit;
   }
 
   /**
@@ -263,6 +267,7 @@ public class E3Agent implements AgentInterface {
       return balancedWandering(currentState);
     } 
 
+    //TODO: these should not be run for every step. (need to store a copy of the set of known states when they are run.. ask daniel)
     exploitPolicy = 
       mdp.valueIterate(horizonTime, discountFactor, false);
     explorePolicy = 
@@ -324,19 +329,19 @@ public class E3Agent implements AgentInterface {
 
   public Action agent_step(double reward, Observation observation) {
 
-    MyState currentState = new MyState(observation.intArray, false);
-    System.out.println("logging:  previous state: " + previousState.state[0] + 
-        " previousAction: " + previousAction.action[0] + 
-        " currentState: " + currentState.state[0] + 
-        " reward:" + reward);
-    logThis(previousState, previousAction, currentState, reward);
-    previousAction = findAction(currentState);
-    previousState = currentState;
-    if (previousAction == null) {
-      int a = 2/0;
-    }
-    Action returnAction = new Action(previousAction.action.length, 0);
-    returnAction.intArray = previousAction.action;
+	MyState currentState = new MyState(observation.intArray, false);
+	System.out.println("logging:  previousState : " + previousState + 
+			" previousAction: " + previousAction + 
+			" currentState: " + currentState + 
+			" reward:" + reward);
+	logThis(previousState, previousAction, currentState, reward);
+	previousAction = findAction(currentState);
+	previousState = currentState;
+	if (previousAction == null) {
+		int a = 2/0;
+	}
+	Action returnAction = new Action(previousAction.action.length, 0);
+	returnAction.intArray = previousAction.action;
     return returnAction;
   }
 
@@ -421,8 +426,9 @@ public class E3Agent implements AgentInterface {
       }
     }
     this.mdp = mdp;
-    horizonTime = 3;
 
+    //horizonTime = 3;
+    
     //findAction(state2);
   }
 
