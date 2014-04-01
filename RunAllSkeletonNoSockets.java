@@ -30,33 +30,37 @@ import org.rlcommunity.rlglue.codec.util.AgentLoader;
 import org.rlcommunity.rlglue.codec.EnvironmentInterface;
 
 /**
-* A simple example of how can you run all components of the skeleton project from a single Java class
-* without using network sockets.  Because we remove the socket overhead, these experiments can execute
-* many more steps per second (if they are computationally cheap).
-*
-* The great thing about this approach is that the experiment, agent, and environment are agnostic
-* to how they are being used: locally or over the network.  This means they are still 100% RL-Glue
-* portable and can be used together with any other language.
-*/
-public class RunAllSkeletonNoSockets{
-	
-	public static void main(String[] args){
-		//Create the Agent
-		AgentInterface theAgent=new E3Agent();
-		
-		//Create the Environment
-		EnvironmentInterface theEnvironment=new SysOpEnvironment();
-		
-		LocalGlue localGlueImplementation=new LocalGlue(theEnvironment,theAgent);
-		RLGlue.setGlue(localGlueImplementation);
-		
-		
-		//Run the main method of the Skeleton Experiment, using the arguments were were passed
-		//This will run the experiment in the main thread.  The Agent and Environment will run
-		//locally, without sockets.
-		SkeletonExperiment.main(args);
-		System.out.println("RunAllSkeletonNoSockets Complete");
-		
-	}
+ * A simple example of how can you run all components of the skeleton project
+ * from a single Java class without using network sockets. Because we remove the
+ * socket overhead, these experiments can execute many more steps per second (if
+ * they are computationally cheap).
+ * 
+ * The great thing about this approach is that the experiment, agent, and
+ * environment are agnostic to how they are being used: locally or over the
+ * network. This means they are still 100% RL-Glue portable and can be used
+ * together with any other language.
+ */
+public class RunAllSkeletonNoSockets {
+
+    public static void main(String[] args) {
+        // Create the Agent
+        AgentInterface theAgent = new E3Agent();
+
+        // Create the Environment
+        EnvironmentInterface theEnvironment = new SysOpEnvironment();
+
+        LocalGlue localGlueImplementation = new LocalGlue(theEnvironment,
+                theAgent);
+        RLGlue.setGlue(localGlueImplementation);
+
+        // Run the main method of the Skeleton Experiment, using the arguments
+        // were were passed
+        // This will run the experiment in the main thread. The Agent and
+        // Environment will run
+        // locally, without sockets.
+        SkeletonExperiment.main(args);
+        System.out.println("RunAllSkeletonNoSockets Complete");
+
+    }
 
 }
