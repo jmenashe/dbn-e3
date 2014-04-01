@@ -219,14 +219,13 @@ public class E3Agent implements AgentInterface {
         // the horizon time.)
         for (int i = 0; i < horizonTime; i++) {
             for (MyState from : mdp.transitionProbabilities.keySet()) {
-                // if this is a known state, the probability of reaching a known
+                // if this is an unknown state, the probability of reaching an unknown
                 // state is 1
                 if (!mdp.isKnown(from)) {
                     newProbabilities.put(from, 1.0);
                 }
                 // otherwise calculate the probability of ending up in a known
-                // state, using
-                // dynamic programming (memoization)
+                // state, using dynamic programming (memoization)
                 else {
                     double newProb = 0;
                     // TODO: null pointers? (Should not happen!)
@@ -235,6 +234,8 @@ public class E3Agent implements AgentInterface {
                                 + from.state[0] + " action: "
                                 + policy.get(i).get(from).action[0]);
                     }
+                    // For all possible transitions, multiply transition 
+                    //probability by the stored value for the target state. 
                     for (MyStateProbability msp : mdp.getActualProbabilities(
                             from, policy.get(policy.size() - 1).get(from))) {
                         newProb += probabilities.get(msp.state) * msp.value;
