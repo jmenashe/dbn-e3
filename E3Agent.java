@@ -361,17 +361,25 @@ public class E3Agent implements AgentInterface {
     }
 
     public Action agent_step(double reward, Observation observation) {
-
         MyState currentState = new MyState(observation.intArray, false);
+
         System.out.println("logging:  previousState : " + previousState
                 + " previousAction: " + previousAction + " currentState: "
                 + currentState + " reward:" + reward);
+
+        MyAction newAction = findAction(currentState);
+
+        // Log the necessary statistics
         logThis(previousState, previousAction, currentState, reward);
-        previousAction = findAction(currentState);
+
+        previousAction = newAction;
         previousState = currentState;
+
         if (previousAction == null) {
+            // This should never happen
             int a = 2 / 0;
         }
+
         Action returnAction = new Action(previousAction.action.length, 0);
         returnAction.intArray = previousAction.action;
         return returnAction;
