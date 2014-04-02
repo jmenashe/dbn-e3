@@ -115,7 +115,7 @@ public class E3Agent implements AgentInterface {
                     + " count: " + currentCount + " from " + currentState);
             // if this action has not been taken before, try it now
             if (currentCount == null) {
-                log("have not tried action " + a.action[0]);
+                log("have not tried action " + a.getAction(0));
                 return a;
             } else if (currentCount < leastTriedCount) {
                 leastTriedCount = currentCount;
@@ -229,7 +229,7 @@ public class E3Agent implements AgentInterface {
                     if (debug) {
                         log("inner loop, state: "
                                 + from.state[0] + " action: "
-                                + policy.get(i).get(from).action[0]);
+                                + policy.get(i).get(from).getAction(0));
                     }
                     // For all possible transitions, multiply transition 
                     //probability by the stored value for the target state. 
@@ -350,8 +350,8 @@ public class E3Agent implements AgentInterface {
         MyState startingState = new MyState(observation.intArray, false);
         stateVisitCounts.put(startingState, 1);
         MyAction action = findAction(startingState);
-        Action returnAction = new Action(action.action.length, 0);
-        returnAction.intArray = action.action;
+        Action returnAction = new Action(action.getActions().length, 0);
+        returnAction.intArray = action.getActions();
         previousAction = action;
         previousState = startingState;
         return returnAction;
@@ -377,8 +377,8 @@ public class E3Agent implements AgentInterface {
             int a = 2 / 0;
         }
 
-        Action returnAction = new Action(previousAction.action.length, 0);
-        returnAction.intArray = previousAction.action;
+        Action returnAction = new Action(previousAction.getActions().length, 0);
+        returnAction.intArray = previousAction.getActions();
         return returnAction;
     }
 
@@ -462,8 +462,8 @@ public class E3Agent implements AgentInterface {
                         + (entry.getKey().state == null ? "null" : entry
                         .getKey().state[0])
                         + " action : "
-                        + (entry.getValue().action == null ? "null" : entry
-                        .getValue().action[0]));
+                        + (entry.getValue().getActions() == null ? "null" : entry
+                        .getValue().getAction(0)));
             }
         }
         this.mdp = mdp;
