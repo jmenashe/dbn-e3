@@ -260,12 +260,12 @@ public class MDP {
                     // states
                     // by their probabilities
                     for (MyStateProbability msp : getProbabilities(s, a)) {
-                        if (knownStates.contains(msp.state)) {
-                            currentValue += msp.value
-                                    * previousU.get(msp.state);
+                        if (knownStates.contains(msp.getState())) {
+                            currentValue += msp.getValue()
+                                    * previousU.get(msp.getState());
                         } else if (rewardExploration) {
 
-                            currentValue += msp.value * rewardMax * i;
+                            currentValue += msp.getValue() * rewardMax * i;
                         }
                     }
 

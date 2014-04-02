@@ -23,25 +23,22 @@
  * 
  */
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
-
 import org.rlcommunity.rlglue.codec.EnvironmentInterface;
+import org.rlcommunity.rlglue.codec.taskspec.TaskSpec;
+import org.rlcommunity.rlglue.codec.taskspec.TaskSpecVRLGLUE3;
+import org.rlcommunity.rlglue.codec.taskspec.ranges.DoubleRange;
+import org.rlcommunity.rlglue.codec.taskspec.ranges.IntRange;
 import org.rlcommunity.rlglue.codec.types.Action;
 import org.rlcommunity.rlglue.codec.types.Observation;
 import org.rlcommunity.rlglue.codec.types.Reward_observation_terminal;
 import org.rlcommunity.rlglue.codec.util.EnvironmentLoader;
-import org.rlcommunity.rlglue.codec.taskspec.TaskSpecVRLGLUE3;
-import org.rlcommunity.rlglue.codec.taskspec.TaskSpec;
-import org.rlcommunity.rlglue.codec.taskspec.ranges.IntRange;
-import org.rlcommunity.rlglue.codec.taskspec.ranges.DoubleRange;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Random;
 
 /**
- * 
+ *
  */
 public class SysOpEnvironment implements EnvironmentInterface {
 
@@ -53,11 +50,11 @@ public class SysOpEnvironment implements EnvironmentInterface {
     private HashMap<Integer, SysOpCpu> cpuMap;
     private HashMap<Integer, SysOpCpu> nextCpuMap;
 
-    double runningReward = 1.0;
+    private double runningReward = 1.0;
 
-    final double oddsDownAffectsUp = 0.5;
-    final double oddsStayUp = 0.95;
-    final double oddsComeUp = 0.05;
+    public final double oddsDownAffectsUp = 0.5;
+    public final double oddsStayUp = 0.95;
+    public final double oddsComeUp = 0.05;
 
     public String env_init() {
 
@@ -101,7 +98,7 @@ public class SysOpEnvironment implements EnvironmentInterface {
 
     public Observation env_start() {
 
-        cpus = new ArrayList<SysOpCpu>(5);
+        cpus = new ArrayList<>(5);
 
         SysOpCpu centerNode = new SysOpCpu(true, null, 4);
         SysOpCpu bottomNode = new SysOpCpu(true, null, 1);
@@ -214,10 +211,9 @@ public class SysOpEnvironment implements EnvironmentInterface {
                 reward += runningReward;
             }
         }
-        Reward_observation_terminal rot = new Reward_observation_terminal(
-                reward, obs, episodeOver);
 
-        return rot;
+        return new Reward_observation_terminal(
+                reward, obs, episodeOver);
     }
 
     public void env_cleanup() {
@@ -233,15 +229,13 @@ public class SysOpEnvironment implements EnvironmentInterface {
     public String toString() {
         StringBuilder sb = new StringBuilder("Environment contains:\n");
         for (SysOpCpu cpu : cpus) {
-            sb.append("\t" + cpu.toString() + "\n");
+            sb.append("\t").append(cpu.toString()).append("\n");
         }
         return sb.toString();
     }
 
     /**
      * This is a trick we can use to make the agent easily loadable.
-     * 
-     * @param args
      */
     public static void main(String[] args) {
         EnvironmentLoader theLoader = new EnvironmentLoader(

@@ -1,6 +1,6 @@
 public final class MyStateAction {
-    public MyState state;
-    public MyAction action;
+    private MyState state;
+    private MyAction action;
 
     public MyStateAction(MyState state, MyAction action) {
         this.state = state;

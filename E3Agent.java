@@ -104,7 +104,7 @@ public class E3Agent implements AgentInterface {
         // if no action has been taken from this state before
         if (theMap == null) {
             log("balancedWandering: no action taken from state "
-                    + currentState.state[0]);
+                    + currentState.getState(0));
 
             return actions[0];
         }
@@ -228,18 +228,18 @@ public class E3Agent implements AgentInterface {
                     // TODO: null pointers? (Should not happen!)
                     if (debug) {
                         log("inner loop, state: "
-                                + from.state[0] + " action: "
+                                + from.getState(0) + " action: "
                                 + policy.get(i).get(from).getAction(0));
                     }
                     // For all possible transitions, multiply transition 
                     //probability by the stored value for the target state. 
                     for (MyStateProbability msp : mdp.getActualProbabilities(
                             from, policy.get(policy.size() - 1).get(from))) {
-                        newProb += probabilities.get(msp.state) * msp.value;
+                        newProb += probabilities.get(msp.getState()) * msp.getValue();
                         if (debug) {
                             log("dp prob: "
-                                    + probabilities.get(msp.state)
-                                    + " transition prob " + msp.value);
+                                    + probabilities.get(msp.getState())
+                                    + " transition prob " + msp.getValue());
                         }
                     }
                     newProbabilities.put(from, newProb);
@@ -252,7 +252,7 @@ public class E3Agent implements AgentInterface {
             if (debug) {
                 log(i);
                 for (Entry<MyState, Double> e : probabilities.entrySet()) {
-                    log("State: " + e.getKey().state[0]
+                    log("State: " + e.getKey().getState(0)
                             + " value: " + e.getValue());
                 }
                 //TODO Adam, you forgot something?
@@ -459,8 +459,8 @@ public class E3Agent implements AgentInterface {
             log("i: " + i++);
             for (Entry<MyState, MyAction> entry : hm.entrySet()) {
                 log("\tstate: "
-                        + (entry.getKey().state == null ? "null" : entry
-                        .getKey().state[0])
+                        + (entry.getKey().getStates() == null ? "null" : entry
+                        .getKey().getState(0))
                         + " action : "
                         + (entry.getValue().getActions() == null ? "null" : entry
                         .getValue().getAction(0)));

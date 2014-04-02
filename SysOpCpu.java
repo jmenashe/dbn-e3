@@ -9,9 +9,9 @@ public final class SysOpCpu {
 
     public SysOpCpu(boolean running, List<SysOpCpu> linkedCpus, int id) {
         if (linkedCpus != null) {
-            this.linkedCpus = new LinkedList<SysOpCpu>(linkedCpus);
+            this.linkedCpus = new LinkedList<>(linkedCpus);
         } else {
-            this.linkedCpus = new LinkedList<SysOpCpu>();
+            this.linkedCpus = new LinkedList<>();
         }
         this.id = id;
         this.running = running;
@@ -44,7 +44,7 @@ public final class SysOpCpu {
     public String toString() {
         StringBuilder sb = new StringBuilder("Cpu id: " + id + "; connected to");
         for (SysOpCpu c : linkedCpus) {
-            sb.append(" " + c.id);
+            sb.append(" ").append(c.id);
         }
 
         return sb.toString();
@@ -63,6 +63,6 @@ public final class SysOpCpu {
     }
 
     public int hashCode() {
-        return id;
+        return id * 13;
     }
 }
