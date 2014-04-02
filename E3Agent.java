@@ -255,7 +255,8 @@ public class E3Agent implements AgentInterface {
                     log("State: " + e.getKey().state[0]
                             + " value: " + e.getValue());
                 }
-                log();
+                //TODO Adam, you forgot something?
+                //log();
             }
         }
 
