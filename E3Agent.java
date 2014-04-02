@@ -1,18 +1,14 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Random;
-import java.util.Set;
-
 import org.rlcommunity.rlglue.codec.AgentInterface;
+import org.rlcommunity.rlglue.codec.taskspec.TaskSpec;
+import org.rlcommunity.rlglue.codec.taskspec.ranges.DoubleRange;
+import org.rlcommunity.rlglue.codec.taskspec.ranges.IntRange;
 import org.rlcommunity.rlglue.codec.types.Action;
 import org.rlcommunity.rlglue.codec.types.Observation;
-import org.rlcommunity.rlglue.codec.util.AgentLoader;
-import org.rlcommunity.rlglue.codec.taskspec.TaskSpec;
-import org.rlcommunity.rlglue.codec.taskspec.ranges.IntRange;
-import org.rlcommunity.rlglue.codec.taskspec.ranges.DoubleRange;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.Random;
 
 public class E3Agent implements AgentInterface {
     private boolean debug = false;
@@ -84,9 +80,8 @@ public class E3Agent implements AgentInterface {
 
     /**
      * This should return the available actions from the given state.
-     * 
-     * @param currentState
-     *            The state from which the set of actions are sought
+     *
+     * @param currentState The state from which the set of actions are sought
      * @return The possible actioins from currentState
      */
     private MyAction[] getAllActions(MyState currentState) {
@@ -96,9 +91,8 @@ public class E3Agent implements AgentInterface {
 
     /**
      * Finds the so far least taken action from a given state.
-     * 
-     * @param currentState
-     *            The state from which the action is to be taken
+     *
+     * @param currentState The state from which the action is to be taken
      * @return The least taken action from currentState
      */
     private MyAction balancedWandering(MyState currentState) {
@@ -139,7 +133,7 @@ public class E3Agent implements AgentInterface {
 
     // fairly untested
     private void logThis(MyState from, MyAction action, MyState to,
-            double reward) {
+                         double reward) {
         // Increase state visit count
         Integer stateVisitCount = stateVisitCounts.get(to);
         stateVisitCount = stateVisitCount == null ? 1 : stateVisitCount + 1;
@@ -151,7 +145,7 @@ public class E3Agent implements AgentInterface {
         // Increase state-action visit count
         HashMap<MyAction, Integer> theMap = stateActionVisitCounts.get(from);
         if (theMap == null) {
-            theMap = new HashMap<MyAction, Integer>();
+            theMap = new HashMap<>();
             stateActionVisitCounts.put(from, theMap);
         }
         Integer stateActionCount = theMap.get(action);
@@ -165,7 +159,7 @@ public class E3Agent implements AgentInterface {
                 .get(sa);
 
         if (theOtherMap == null) {
-            theOtherMap = new HashMap<MyState, Integer>();
+            theOtherMap = new HashMap<>();
             stateActionStateVisitCounts.put(sa, theOtherMap);
         }
         Integer stateActionStatecount = theOtherMap.get(to);
@@ -194,17 +188,15 @@ public class E3Agent implements AgentInterface {
      * Finds the probability that a certain policy will put the agent in an
      * unknown state, when starting in a certain state, within the horizon time
      * of the MDP
-     * 
-     * @param policy
-     *            The policy to execute
-     * @param startingState
-     *            The state to start from
+     *
+     * @param policy        The policy to execute
+     * @param startingState The state to start from
      * @return The probability of ending up in an unknown state
      */
     @SuppressWarnings("unchecked")
     private double chanceToExplore(
             ArrayList<HashMap<MyState, MyAction>> policy, MyState startingState) {
-        HashMap<MyState, Double> probabilities = new HashMap<MyState, Double>();
+        HashMap<MyState, Double> probabilities = new HashMap<>();
         HashMap<MyState, Double> newProbabilities = new HashMap<MyState, Double>();
 
         // The starting probabilities are 1 for unknown states and 0 for known
@@ -274,9 +266,9 @@ public class E3Agent implements AgentInterface {
      * This should return the limit for the probability of finding an unknown
      * state within the horizon time, above which it is preferable to explore
      * rather than exploit.
-     * 
+     *
      * @return A limit for the probability when it is more preferable to explore
-     *         rather than exploit.
+     * rather than exploit.
      */
     public double getExplorationChanceLimit() {
 
@@ -286,9 +278,8 @@ public class E3Agent implements AgentInterface {
 
     /**
      * Finds the action to take from the given state.
-     * 
-     * @param currentState
-     *            The state from which an action is to be taken
+     *
+     * @param currentState The state from which an action is to be taken
      * @return The action to take
      */
     public MyAction findAction(MyState currentState) {
@@ -348,9 +339,9 @@ public class E3Agent implements AgentInterface {
 
     private void initvars() {
         mdp = new MDP();
-        stateActionStateVisitCounts = new HashMap<MyStateAction, HashMap<MyState, Integer>>();
-        stateActionVisitCounts = new HashMap<MyState, HashMap<MyAction, Integer>>();
-        stateVisitCounts = new HashMap<MyState, Integer>();
+        stateActionStateVisitCounts = new HashMap<>();
+        stateActionVisitCounts = new HashMap<>();
+        stateVisitCounts = new HashMap<>();
     }
 
     public Action agent_start(Observation observation) {
@@ -409,13 +400,13 @@ public class E3Agent implements AgentInterface {
 
     public void test() {
         MDP mdp = new MDP();
-        int[] apa = { 1 };
-        int[] bepa = { 2 };
-        int[] cepa = { 3 };
-        int[] depa = { 4 };
+        int[] apa = {1};
+        int[] bepa = {2};
+        int[] cepa = {3};
+        int[] depa = {4};
 
-        int[] foo = { 1 };
-        int[] bar = { 2 };
+        int[] foo = {1};
+        int[] bar = {2};
         MyState state1 = new MyState(apa, false);
         MyState state2 = new MyState(bepa, false);
         MyState state3 = new MyState(cepa, false);
@@ -468,10 +459,10 @@ public class E3Agent implements AgentInterface {
             for (Entry<MyState, MyAction> entry : hm.entrySet()) {
                 log("\tstate: "
                         + (entry.getKey().state == null ? "null" : entry
-                                .getKey().state[0])
+                        .getKey().state[0])
                         + " action : "
                         + (entry.getValue().action == null ? "null" : entry
-                                .getValue().action[0]));
+                        .getValue().action[0]));
             }
         }
         this.mdp = mdp;
@@ -482,13 +473,13 @@ public class E3Agent implements AgentInterface {
     }
 
     public void test2() {
-        int[] apa = { 1 };
-        int[] bepa = { 2 };
-        int[] cepa = { 3 };
-        int[] depa = { 4 };
+        int[] apa = {1};
+        int[] bepa = {2};
+        int[] cepa = {3};
+        int[] depa = {4};
 
-        int[] foo = { 1 };
-        int[] bar = { 2 };
+        int[] foo = {1};
+        int[] bar = {2};
         MyState state1 = new MyState(apa, false);
         MyState state2 = new MyState(bepa, false);
         MyState state3 = new MyState(cepa, false);
