@@ -19,6 +19,7 @@ public class E3Agent implements AgentInterface {
     private HashMap<MyStateAction, HashMap<MyState, Integer>> stateActionStateVisitCounts;
     private HashMap<MyState, HashMap<MyAction, Integer>> stateActionVisitCounts;
     private HashMap<MyState, Integer> stateVisitCounts;
+
     // hackish
     private MyAction[] allActions;
 
@@ -42,26 +43,30 @@ public class E3Agent implements AgentInterface {
     private MyState previousState;
     private MyAction previousAction;
 
+    private void log(Object o) {
+        System.err.println(o);
+    }
+
     public void agent_init(String taskSpecification) {
         TaskSpec theTaskSpec = new TaskSpec(taskSpecification);
 
-        System.out.println("Skeleton agent parsed the task spec.");
-        System.out.println("Observations have "
+        log("Skeleton agent parsed the task spec.");
+        log("Observations have "
                 + theTaskSpec.getNumDiscreteObsDims() + " integer dimensions");
-        System.out.println("Actions have "
+        log("Actions have "
                 + theTaskSpec.getNumDiscreteActionDims()
                 + " integer dimensions");
 
         IntRange theObsRange = theTaskSpec.getDiscreteObservationRange(0);
 
-        System.out.println("Observation (state) range is: "
+        log("Observation (state) range is: "
                 + theObsRange.getMin() + " to " + theObsRange.getMax());
 
         IntRange theActRange = theTaskSpec.getDiscreteActionRange(0);
-        System.out.println("Action range is: " + theActRange.getMin() + " to "
+        log("Action range is: " + theActRange.getMin() + " to "
                 + theActRange.getMax());
         DoubleRange theRewardRange = theTaskSpec.getRewardRange();
-        System.out.println("Reward range is: " + theRewardRange.getMin()
+        log("Reward range is: " + theRewardRange.getMin()
                 + " to " + theRewardRange.getMax());
 
         mdp = new MDP();
@@ -103,7 +108,7 @@ public class E3Agent implements AgentInterface {
                 .get(currentState);
         // if no action has been taken from this state before
         if (theMap == null) {
-            System.out.println("balancedWandering: no action taken from state "
+            log("balancedWandering: no action taken from state "
                     + currentState.state[0]);
 
             return actions[0];
@@ -111,11 +116,11 @@ public class E3Agent implements AgentInterface {
 
         for (MyAction a : actions) {
             Integer currentCount = theMap.get(a);
-            System.out.println("balancedWandering investigating: " + a
+            log("balancedWandering investigating: " + a
                     + " count: " + currentCount + " from " + currentState);
             // if this action has not been taken before, try it now
             if (currentCount == null) {
-                System.out.println("have not tried action " + a.action[0]);
+                log("have not tried action " + a.action[0]);
                 return a;
             } else if (currentCount < leastTriedCount) {
                 leastTriedCount = currentCount;
@@ -229,7 +234,7 @@ public class E3Agent implements AgentInterface {
                     double newProb = 0;
                     // TODO: null pointers? (Should not happen!)
                     if (debug) {
-                        System.out.println("inner loop, state: "
+                        log("inner loop, state: "
                                 + from.state[0] + " action: "
                                 + policy.get(i).get(from).action[0]);
                     }
@@ -239,7 +244,7 @@ public class E3Agent implements AgentInterface {
                             from, policy.get(policy.size() - 1).get(from))) {
                         newProb += probabilities.get(msp.state) * msp.value;
                         if (debug) {
-                            System.out.println("dp prob: "
+                            log("dp prob: "
                                     + probabilities.get(msp.state)
                                     + " transition prob " + msp.value);
                         }
@@ -252,12 +257,12 @@ public class E3Agent implements AgentInterface {
             probabilities = (HashMap<MyState, Double>) newProbabilities.clone();
 
             if (debug) {
-                System.out.println(i);
+                log(i);
                 for (Entry<MyState, Double> e : probabilities.entrySet()) {
-                    System.out.println("State: " + e.getKey().state[0]
+                    log("State: " + e.getKey().state[0]
                             + " value: " + e.getValue());
                 }
-                System.out.println();
+                log();
             }
         }
 
@@ -288,7 +293,7 @@ public class E3Agent implements AgentInterface {
     public MyAction findAction(MyState currentState) {
         // Balanced wandering if unknown state!
         if (!mdp.isKnown(currentState)) {
-            System.out.println("findAction: starting balanced wandering");
+            log("findAction: starting balanced wandering");
             exploreCount = 0;
             exploitCount = 0;
             return balancedWandering(currentState);
@@ -303,14 +308,14 @@ public class E3Agent implements AgentInterface {
             double chanceToExplore = chanceToExplore(explorePolicy,
                     currentState);
 
-            System.out.println("Chance to explore: " + chanceToExplore);
+            log("Chance to explore: " + chanceToExplore);
 
             if (chanceToExplore > getExplorationChanceLimit()) {
-                System.out.println("Starting exploration");
+                log("Starting exploration");
                 exploreCount = horizonTime;
             } else {
                 // if exploitation seems beneficial
-                System.out.println("Starting exploitation");
+                log("Starting exploitation");
                 exploitCount = horizonTime;
             }
         }
@@ -319,7 +324,7 @@ public class E3Agent implements AgentInterface {
         // exploring
         if (exploreCount > 0) {
             exploreCount--;
-            System.out.println("exploring");
+            log("exploring");
 
             return explorePolicy.get(explorePolicy.size() - 1)
                     .get(currentState);
@@ -329,7 +334,7 @@ public class E3Agent implements AgentInterface {
         // exploiting
         if (exploitCount > 0) {
             exploitCount--;
-            System.out.println("exploiting");
+            log("exploiting");
 
             return exploitPolicy.get(exploitPolicy.size() - 1)
                     .get(currentState);
@@ -362,7 +367,7 @@ public class E3Agent implements AgentInterface {
     public Action agent_step(double reward, Observation observation) {
         MyState currentState = new MyState(observation.intArray, false);
 
-        System.out.println("logging:  previousState : " + previousState
+        log("logging:  previousState : " + previousState
                 + " previousAction: " + previousAction + " currentState: "
                 + currentState + " reward:" + reward);
 
@@ -458,9 +463,9 @@ public class E3Agent implements AgentInterface {
                 false);
         int i = 0;
         for (HashMap<MyState, MyAction> hm : policy) {
-            System.out.println("i: " + i++);
+            log("i: " + i++);
             for (Entry<MyState, MyAction> entry : hm.entrySet()) {
-                System.out.println("\tstate: "
+                log("\tstate: "
                         + (entry.getKey().state == null ? "null" : entry
                                 .getKey().state[0])
                         + " action : "
@@ -500,7 +505,7 @@ public class E3Agent implements AgentInterface {
 
         for (MyStateProbability msp : mdp.getActualProbabilities(state1,
                 action1)) {
-            System.out.println("State: " + msp.state.state[0] + " prob: "
+            log("State: " + msp.state.state[0] + " prob: "
                     + msp.value);
         }
 
