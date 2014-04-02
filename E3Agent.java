@@ -31,6 +31,7 @@ public class E3Agent implements AgentInterface {
     private ArrayList<HashMap<MyState, MyAction>> exploitPolicy;
 
     final private int horizonTime = 20;
+
     // visit count until a state is known
     final private int knownStateLimit = 100;
     final private double explorationChanceLimit = 0.05;
