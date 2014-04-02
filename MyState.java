@@ -1,24 +1,23 @@
-class MyState {
-    public int[] state;
-    public boolean isLastState;
+public class MyState {
+    private int[] states;
+    private boolean isLastState;
 
     public MyState(int[] theState, boolean isLastState) {
         this.isLastState = isLastState;
-        if (theState == null)
-            return;
-        state = new int[theState.length];
-        for (int i = 0; i < theState.length; i++) {
-            state[i] = theState[i];
+        if (theState != null) {
+            states = new int[theState.length];
+            System.arraycopy(theState, 0, states, 0, theState.length);
         }
     }
 
     @Override
     public int hashCode() {
-        if (isLastState)
+        if (isLastState) {
             return 0;
+        }
         int hash = 1;
-        for (int i = 0; i < state.length; i++) {
-            hash = hash * 17 + state[i];
+        for (int aState : states) {
+            hash = hash * 17 + aState;
         }
         return hash;
     }
@@ -34,12 +33,12 @@ class MyState {
         if (other.isLastState && isLastState)
             return true;
 
-        if (other.state.length != state.length) {
+        if (other.states.length != states.length) {
             return false;
         }
 
-        for (int i = 0; i < state.length; i++) {
-            if (other.state[i] != state[i]) {
+        for (int i = 0; i < states.length; i++) {
+            if (other.states[i] != states[i]) {
                 return false;
             }
         }
@@ -49,10 +48,26 @@ class MyState {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("State: [ ");
-        for (int i = 0; i < state.length; i++) {
-            sb.append(state[i] + " ");
+        for (int aState : states) {
+            sb.append(aState).append(" ");
         }
         sb.append("]");
         return sb.toString();
+    }
+
+    public boolean isLastState() {
+        return isLastState;
+    }
+
+    public int[] getStates() {
+        return states;
+    }
+
+    public int getState(int index) {
+        if (index >= states.length || index < 0) {
+            throw new IllegalArgumentException("Nonexistent index");
+        }
+
+        return states[index];
     }
 }

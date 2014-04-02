@@ -186,7 +186,7 @@ public class MDP {
      */
     public Set<MyAction> getActions(MyState from) {
         // if in gathering state, return an array of just one dummy action
-        if (from.isLastState) {
+        if (from.isLastState()) {
             HashSet<MyAction> hs = new HashSet<>();
             hs.add(new MyAction(new int[1]));
             return hs;
@@ -278,7 +278,7 @@ public class MDP {
 
                 if (debug) {
                     System.out.println("State: "
-                            + (s.state == null ? "null" : s.state[0])
+                            + (s.getStates() == null ? "null" : s.getState(0))
                             + " value: " + bestValue);
                 }
                 // Store the best action found in the policy hashmap
