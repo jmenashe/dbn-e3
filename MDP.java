@@ -1,23 +1,20 @@
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 
 //TODO: return 0 or -inf for an unknown state when not rewarding exploration?
-class MDP {
-    boolean debug = false;
+public class MDP {
+    private boolean debug = false;
     private final double rewardMax = 100000;
 
     // For each state
     // For each action from that state
     // Store a list of transition probabilities
-    HashMap<MyState, HashMap<MyAction, HashSet<MyStateProbability>>> transitionProbabilities;
+    private HashMap<MyState, HashMap<MyAction, HashSet<MyStateProbability>>> transitionProbabilities;
 
-    HashMap<MyState, Double> rewards;
-    HashSet<MyState> knownStates;
+    private HashMap<MyState, Double> rewards;
+    private HashSet<MyState> knownStates;
 
     /**
      * Create a new MDP
@@ -26,14 +23,13 @@ class MDP {
         transitionProbabilities = new HashMap<>();
 
         rewards = new HashMap<>();
-        knownStates = new HashSet<MyState>();
+        knownStates = new HashSet<>();
     }
 
     /**
      * Adds a state to the set of known states.
-     * 
-     * @param state
-     *            The state to be added
+     *
+     * @param state The state to be added
      */
     public void addToKnownStates(MyState state) {
 
@@ -42,11 +38,9 @@ class MDP {
 
     /**
      * Sets the reward for a given state.
-     * 
-     * @param state
-     *            The state to set the reward for
-     * @param value
-     *            The reward to set for the given state
+     *
+     * @param state The state to set the reward for
+     * @param value The reward to set for the given state
      */
     public void setReward(MyState state, double value) {
         rewards.put(state, value);
@@ -56,9 +50,8 @@ class MDP {
      * Gets the reward stored by the MDP for a given state. This does not take
      * into consideration whether a state is known or not. If this consideration
      * should be taken - use getReward() instead.
-     * 
-     * @param state
-     *            The state for which the reward is sought
+     *
+     * @param state The state for which the reward is sought
      * @return The reward for the given state
      */
     public double getActualReward(MyState state) {
@@ -75,15 +68,13 @@ class MDP {
      * Returns the reward for a given state. This method considers whether a
      * state is known or not. If it is known, the recorded reward is returned,
      * otherwise the return value depends on the parameter rewardExploration.
-     * 
-     * @param state
-     *            The state whose reward is sought
-     * @param rewardExploration
-     *            If this is set to true and the given state is unknown, the
-     *            maximum reward is returned; if this is false and the given
-     *            state is unknown, the minimum reward is returned
+     *
+     * @param state             The state whose reward is sought
+     * @param rewardExploration If this is set to true and the given state is unknown, the
+     *                          maximum reward is returned; if this is false and the given
+     *                          state is unknown, the minimum reward is returned
      * @return The reward associated with the given state, considering whether
-     *         it is known or not.
+     * it is known or not.
      */
     public double getReward(MyState state, boolean rewardExploration) {
         Double val = rewards.get(state);
@@ -105,32 +96,28 @@ class MDP {
     /**
      * Sets the probability of going from a state, to another state when
      * performing an action.
-     * 
-     * @param from
-     *            The state from which the action is taken
-     * @param action
-     *            The action associated with the probability
-     * @param to
-     *            The state to which
-     * @param probability
-     *            The probability of ending up in the state <code>to</code> when
-     *            taking the action <code>action</code> and starting in state
-     *            <code>
-     * from</code>
+     *
+     * @param from        The state from which the action is taken
+     * @param action      The action associated with the probability
+     * @param to          The state to which
+     * @param probability The probability of ending up in the state <code>to</code> when
+     *                    taking the action <code>action</code> and starting in state
+     *                    <code>
+     *                    from</code>
      */
     public void setProbability(MyState from, MyAction action, MyState to,
-            double probability) {
+                               double probability) {
         // get everything to do with "from"
         HashMap<MyAction, HashSet<MyStateProbability>> theMap = transitionProbabilities
                 .get(from);
         if (theMap == null) {
-            theMap = new HashMap<MyAction, HashSet<MyStateProbability>>();
+            theMap = new HashMap<>();
             transitionProbabilities.put(from, theMap);
         }
         // get everything to do with "action" and "from"
         HashSet<MyStateProbability> theSet = theMap.get(action);
         if (theSet == null) {
-            theSet = new HashSet<MyStateProbability>();
+            theSet = new HashSet<>();
             theMap.put(action, theSet);
 
         }
@@ -144,17 +131,15 @@ class MDP {
      * Gets the recorded probabilities associated with all target states from a
      * given state when a given action is performed. This method does not
      * consider whether a state is known or not.
-     * 
-     * @param from
-     *            The state from which probabilities are sought
-     * @param action
-     *            The action for which probabilities are sought
+     *
+     * @param from   The state from which probabilities are sought
+     * @param action The action for which probabilities are sought
      * @return A list of pairs of states and probabilities signifying the
-     *         probability of ending up in these states when taking the given
-     *         action from the given state
+     * probability of ending up in these states when taking the given
+     * action from the given state
      */
     public HashSet<MyStateProbability> getActualProbabilities(MyState from,
-            MyAction action) {
+                                                              MyAction action) {
         HashMap<MyAction, HashSet<MyStateProbability>> theMap = transitionProbabilities
                 .get(from);
         if (theMap == null) {
@@ -169,17 +154,15 @@ class MDP {
      * whether a state is known or not; if it is not known, all probabilities of
      * transitioning to other states are 0, and the probability of ending up in
      * the gathering state is 1.
-     * 
-     * @param from
-     *            The state from which probabilities are sought
-     * @param action
-     *            The action for which probabilities are sought
+     *
+     * @param from   The state from which probabilities are sought
+     * @param action The action for which probabilities are sought
      * @return A list of pairs of states and probabilities signifying the
-     *         probability of ending up in these states when taking the given
-     *         action from the given state
+     * probability of ending up in these states when taking the given
+     * action from the given state
      */
     public HashSet<MyStateProbability> getProbabilities(MyState from,
-            MyAction action) {
+                                                        MyAction action) {
 
         if (knownStates.contains(from)) {
             return getActualProbabilities(from, action);
@@ -187,7 +170,7 @@ class MDP {
             // If state unkown, create a new list with only one entry - the
             // gathering state
             MyState endState = new MyState(null, true);
-            HashSet<MyStateProbability> returnList = new HashSet<MyStateProbability>();
+            HashSet<MyStateProbability> returnList = new HashSet<>();
             returnList.add(new MyStateProbability(endState, 1));
             return returnList;
         }
@@ -196,16 +179,15 @@ class MDP {
     /**
      * Gets all actions that have recorded transition probabilities from a given
      * state
-     * 
-     * @param from
-     *            The state from which a set of actions is sought
+     *
+     * @param from The state from which a set of actions is sought
      * @return A set of actions with recorded transition probabilities from the
-     *         given state
+     * given state
      */
     public Set<MyAction> getActions(MyState from) {
         // if in gathering state, return an array of just one dummy action
         if (from.isLastState) {
-            HashSet<MyAction> hs = new HashSet<MyAction>();
+            HashSet<MyAction> hs = new HashSet<>();
             hs.add(new MyAction(new int[1]));
             return hs;
         }
@@ -221,9 +203,8 @@ class MDP {
 
     /**
      * Returns true if the given state is considered known.
-     * 
-     * @param state
-     *            The state
+     *
+     * @param state The state
      * @return True if the state is known
      */
     public boolean isKnown(MyState state) {
@@ -232,26 +213,23 @@ class MDP {
 
     /**
      * Performs T-step value iteration.
-     * 
-     * @param T
-     *            The mixing time of the MDP
-     * @param discount
-     *            The discount rate
-     * @param rewardExploration
-     *            If set to true, unknown states are given the maximum value,
-     *            otherwise they are given the minimum value
+     *
+     * @param T                 The mixing time of the MDP
+     * @param discount          The discount rate
+     * @param rewardExploration If set to true, unknown states are given the maximum value,
+     *                          otherwise they are given the minimum value
      * @return A list, denoting the policy found by the value iteration //TODO:
-     *         Maybe this should not be a list, but rather just a HashMap -
-     *         maybe the partial results are useless outside of this method
+     * Maybe this should not be a list, but rather just a HashMap -
+     * maybe the partial results are useless outside of this method
      */
     public ArrayList<HashMap<MyState, MyAction>> valueIterate(int T,
-            double discount, boolean rewardExploration) {
+                                                              double discount, boolean rewardExploration) {
 
         // No need to store any more state values than from the preceding
         // iteration
-        HashMap<MyState, Double> previousU = new HashMap<MyState, Double>();
-        HashMap<MyState, Double> currentU = new HashMap<MyState, Double>();
-        ArrayList<HashMap<MyState, MyAction>> returnList = new ArrayList<HashMap<MyState, MyAction>>();
+        HashMap<MyState, Double> previousU = new HashMap<>();
+        HashMap<MyState, Double> currentU = new HashMap<>();
+        ArrayList<HashMap<MyState, MyAction>> returnList = new ArrayList<>();
 
         // Initialize all state values to 0. previousU will contain the values
         // from the previous iteration of the large loop below
@@ -261,12 +239,12 @@ class MDP {
 
         previousU.put(new MyState(null, true), 0.0);
         // TODO: is this really needed - maybe just use knownStates?
-        HashSet<MyState> knownAndS0 = (HashSet<MyState>) knownStates.clone();
+        HashSet<MyState> knownAndS0 = new HashSet<>(knownStates);
         knownAndS0.add(new MyState(null, true));
 
         // Go to T, since we're finding the T-step policy
         for (int i = 0; i < T; i++) {
-            HashMap<MyState, MyAction> policy = new HashMap<MyState, MyAction>();
+            HashMap<MyState, MyAction> policy = new HashMap<>();
 
             // for every origin state
             for (MyState s : knownAndS0) {
@@ -310,11 +288,15 @@ class MDP {
 
             // Prepare for the next iteration
             previousU = currentU;
-            currentU = new HashMap<MyState, Double>();
+            currentU = new HashMap<>();
 
             returnList.add(policy);
         }
 
         return returnList;
+    }
+
+    public HashMap<MyState, HashMap<MyAction, HashSet<MyStateProbability>>> getTransitionProbabilities() {
+        return transitionProbabilities;
     }
 }

@@ -197,11 +197,11 @@ public class E3Agent implements AgentInterface {
     private double chanceToExplore(
             ArrayList<HashMap<MyState, MyAction>> policy, MyState startingState) {
         HashMap<MyState, Double> probabilities = new HashMap<>();
-        HashMap<MyState, Double> newProbabilities = new HashMap<MyState, Double>();
+        HashMap<MyState, Double> newProbabilities = new HashMap<>();
 
         // The starting probabilities are 1 for unknown states and 0 for known
         // states
-        for (MyState state : mdp.transitionProbabilities.keySet()) {
+        for (MyState state : mdp.getTransitionProbabilities().keySet()) {
             if (!mdp.isKnown(state)) {
                 probabilities.put(state, 1.0);
             } else {
@@ -215,7 +215,7 @@ public class E3Agent implements AgentInterface {
         // at
         // the horizon time.)
         for (int i = 0; i < horizonTime; i++) {
-            for (MyState from : mdp.transitionProbabilities.keySet()) {
+            for (MyState from : mdp.getTransitionProbabilities().keySet()) {
                 // if this is an unknown state, the probability of reaching an unknown
                 // state is 1
                 if (!mdp.isKnown(from)) {
@@ -471,37 +471,6 @@ public class E3Agent implements AgentInterface {
         // horizonTime = 3;
 
         // findAction(state2);
-    }
-
-    public void test2() {
-        int[] apa = {1};
-        int[] bepa = {2};
-        int[] cepa = {3};
-        int[] depa = {4};
-
-        int[] foo = {1};
-        int[] bar = {2};
-        MyState state1 = new MyState(apa, false);
-        MyState state2 = new MyState(bepa, false);
-        MyState state3 = new MyState(cepa, false);
-        MyState state4 = new MyState(depa, false);
-
-        MyAction action1 = new MyAction(foo);
-        MyAction action2 = new MyAction(bar);
-        initvars();
-        logThis(state1, action1, state2, 2.0);
-        logThis(state1, action1, state2, 2.0);
-        logThis(state1, action1, state2, 2.0);
-        logThis(state1, action1, state3, 2.0);
-        logThis(state1, action1, state3, 2.0);
-        logThis(state1, action1, state2, 2.0);
-
-        for (MyStateProbability msp : mdp.getActualProbabilities(state1,
-                action1)) {
-            log("State: " + msp.state.state[0] + " prob: "
-                    + msp.value);
-        }
-
     }
 
     public static void main(String[] args) {
