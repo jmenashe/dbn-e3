@@ -167,7 +167,7 @@ public class MDP {
         if (knownStates.contains(from)) {
             return getActualProbabilities(from, action);
         } else {
-            // If state unkown, create a new list with only one entry - the
+            // If state unknown, create a new list with only one entry - the
             // gathering state
             MyState endState = new MyState(null, true);
             HashSet<MyStateProbability> returnList = new HashSet<>();
@@ -238,16 +238,13 @@ public class MDP {
         }
 
         previousU.put(new MyState(null, true), 0.0);
-        // TODO: is this really needed - maybe just use knownStates?
-        HashSet<MyState> knownAndS0 = new HashSet<>(knownStates);
-        knownAndS0.add(new MyState(null, true));
 
         // Go to T, since we're finding the T-step policy
         for (int i = 0; i < T; i++) {
             HashMap<MyState, MyAction> policy = new HashMap<>();
 
             // for every origin state
-            for (MyState s : knownAndS0) {
+            for (MyState s : knownStates) {
                 double reward = getReward(s, rewardExploration);
                 double bestValue = Double.MAX_VALUE * -1.0;
                 MyAction bestAction = null;
