@@ -29,7 +29,7 @@ public final class SysOpCpu {
         return running;
     }
 
-    public void setIsRunning(boolean running) {
+    public void setRunningStatus(boolean running) {
         this.running = running;
     }
 

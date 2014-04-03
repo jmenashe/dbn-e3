@@ -189,7 +189,7 @@ public class SysOpEnvironment implements EnvironmentInterface {
                     }
                 }
             }
-            c.setIsRunning(rand.nextDouble() < probRunning);
+            c.setRunningStatus(rand.nextDouble() < probRunning);
         }
 
         // Switch old and new cpu lists and maps
