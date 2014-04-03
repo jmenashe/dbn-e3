@@ -80,8 +80,10 @@ public class MDP {
         Double val = rewards.get(state);
 
         if (knownStates.contains(state)) {
-            assert (val != null);
-            return val;
+            if(val != null) {
+                return val;
+            }
+            throw new IllegalArgumentException("Non valid state reward pair");
         }
 
         if (rewardExploration) {
