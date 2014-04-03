@@ -52,25 +52,6 @@ public class E3 {
     }
 
     /**
-     * Observe a state transition.
-     */
-    public void observe(
-            Observation from, 
-            Action action,
-            Observation to,
-            int reward
-    ) {
-        // Log the visit
-        updateVisits(from, action, to);
-
-        // Update transition probabilities
-        updateTP(from, action, to);
-
-        // Update reward table
-        updateReward(from, action, to, reward);
-    }
-
-    /**
      * Find the balanced wandering action
      */
     private Action balancedWandering(Observation state) {
@@ -87,6 +68,7 @@ public class E3 {
 
     /**
      * Should we exploit? Or is exploration beneficial?
+     * TODO: this :)
      */
     private boolean shouldExploit(Map<Observation, Action> policy, Observation state) {
         return false;
@@ -104,7 +86,26 @@ public class E3 {
 
     // }}}
 
-    // Functions for updating after an observation {{{
+    // Functions for updating statistics {{{
+
+    /**
+     * Observe a state transition.
+     */
+    public void observe(
+            Observation from, 
+            Action action,
+            Observation to,
+            int reward
+    ) {
+        // Log the visit
+        updateVisits(from, action, to);
+
+        // Update transition probabilities
+        updateTP(from, action, to);
+
+        // Update reward table
+        updateReward(from, action, to, reward);
+    }
 
     /**
      * Update visits statistics
