@@ -1,5 +1,7 @@
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.rlcommunity.rlglue.codec.types.*;
 
@@ -23,10 +25,16 @@ public class E3 {
     // Current policy
     private Map<Observation, Action> currentPolicy;
 
-    public E3() {
+    // All possible actions
+    private List<Action> possibleActions;
+
+    public E3(double discount, List<Action> actions) {
         tps = new TransitionProbabilities();
         sasv = new HashMap<>();
         sr = new HashMap<>();
+
+        this.discount = discount;
+        possibleActions = actions;
     }
 
     /**
@@ -55,7 +63,27 @@ public class E3 {
      * Find the balanced wandering action
      */
     private Action balancedWandering(Observation state) {
-        return null;
+        Action balancingAction = null;
+
+        for (Action action : getPossibleActions(state)) {
+            if (balancingAction == null) { balancingAction = action; continue; }
+
+            if (getVisits(state, action) < getVisits(state, balancingAction)) {
+                balancingAction = action;
+            }
+        }
+
+        return balancingAction;
+    }
+
+    /**
+     * All possible actions in a state
+     * TODO: Don't return all actions
+     * TODO: Only works for 1 dimensional actions
+     * TODO: Do something cool: return an iterator over all possible actions from state
+     */
+    private List<Action> getPossibleActions(Observation state) {
+        return possibleActions;
     }
 
     /**
