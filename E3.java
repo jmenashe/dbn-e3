@@ -7,6 +7,9 @@ import org.rlcommunity.rlglue.codec.types.*;
 
 /**
  * An implementation of the E3 algorithm.
+ *
+ * - A state is of type Observation.
+ * - An action is of type Action.
  */
 public class E3 {
 
@@ -51,7 +54,8 @@ public class E3 {
             // Start exploitation/exploration
             currentPolicy = findExplorationPolicy(state);
 
-            if (shouldExploit(currentPolicy, state)) {
+            if (!shouldExplore(currentPolicy, state)) {
+                // Should we use an exploitation policy instead?
                 currentPolicy = findExploitationPolicy(state);
             }
         }
@@ -78,9 +82,7 @@ public class E3 {
 
     /**
      * All possible actions in a state
-     * TODO: Don't return all actions
-     * TODO: Only works for 1 dimensional actions
-     * TODO: Do something cool: return an iterator over all possible actions from state
+     * TODO: Return an iterator over all possible actions from state
      */
     private List<Action> getPossibleActions(Observation state) {
         return possibleActions;
@@ -88,21 +90,53 @@ public class E3 {
 
     /**
      * Is a state known?
-     * TODO: this :)
+     *
+     * TODO: This :). See E3 paper.
      */
     private boolean isKnown(Observation state) {
         return getVisits(state) > 100;
     }
 
     /**
-     * Should we exploit? Or is exploration beneficial?
-     * TODO: this :)
+     * Should we explore given some policy?
+     * 
+     *
      */
-    private boolean shouldExploit(Map<Observation, Action> policy, Observation state) {
-        return false;
+    private boolean shouldExplore(Map<Observation, Action> explorationPolicy, Observation currentState) {
+        Map<Observation, Double> probs = new HashMap<>();
+
+        // Starting probabilities are 0 for known states and 1 for unknown
+        for (Observation state : tps.getStates()) {
+            if (isKnown(state)) {
+                probs.put(state, 0.0);
+            } else {
+                probs.put(state, 1.0);
+            }
+        }
+
+        long horizonTime = Math.round(1 / (1 - discount));
+
+        // Find probability that we end up in a unknown state in horizonTime steps
+        for (long i = 0; i < horizonTime; i++) {
+            for (Observation state : tps.getStates()) {
+                if (isKnown(state)) {
+                    double probability = 0;
+
+                    // For all possible transitions, multiply transition
+                    // probability by the stored value for the target state. 
+                    for (Map.Entry<Observation, Double> sp : tps.from(state, explorationPolicy.get(state)).entrySet()) {
+                        probability += probs.get(sp.getKey()) * sp.getValue();
+                    }
+                    probs.put(state, probability);
+                }
+            }
+        }
+
+        // TODO: 0.05 should be epsilon / (2 * G^T_max) (see paper, section 6)
+        return probs.get(currentState) > 0.05;
     }
 
-    // Functions for policy calculations {{{
+    // Policy calulations {{{
 
     private Map<Observation, Action> findExplorationPolicy(Observation state) {
         return null;

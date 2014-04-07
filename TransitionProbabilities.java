@@ -15,6 +15,10 @@ public class TransitionProbabilities {
         tp = new HashMap<>();
     }
 
+    public Set<Observation> getStates() {
+        return tp.keySet();
+    }
+
     /**
      * Transition probabilities from a state
      */
