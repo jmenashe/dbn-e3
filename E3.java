@@ -14,6 +14,8 @@ import org.rlcommunity.rlglue.codec.types.*;
 public class E3 {
 
     public double discount;
+    private long horizonTime;
+
 
     // Transition probabilities in the MDP
     private TransitionProbabilities tps;
@@ -28,6 +30,9 @@ public class E3 {
     // Current policy
     private Map<Observation, Action> currentPolicy;
 
+    // Current time we have expl*
+    private long currentTime;
+
     // All possible actions
     private List<Action> possibleActions;
 
@@ -37,6 +42,7 @@ public class E3 {
         sr = new HashMap<>();
 
         this.discount = discount;
+        horizonTime = Math.round(1 / (1 - discount)); 
         possibleActions = actions;
     }
 
@@ -44,22 +50,25 @@ public class E3 {
      * Find the next action.
      */
     public Action nextAction(Observation state) {
-        if (!isKnown(state)) {
-            // Unknown state, resume balanced wandering
+
+        // Unknown state or expl* long enough: balanced wandering
+        if (!isKnown(state) || currentTime >= horizonTime) {
             currentPolicy = null;
+            currentTime = 0;
             return balancedWandering(state);
         }
 
+        // Start exploitation/exploration
         if (currentPolicy == null) {
-            // Start exploitation/exploration
             currentPolicy = findExplorationPolicy(state);
 
+            // Should we use an exploitation policy instead?
             if (!shouldExplore(currentPolicy, state)) {
-                // Should we use an exploitation policy instead?
                 currentPolicy = findExploitationPolicy(state);
             }
         }
 
+        currentTime++;
         return currentPolicy.get(state);
     }
 
@@ -99,8 +108,6 @@ public class E3 {
 
     /**
      * Should we explore given some policy?
-     * 
-     *
      */
     private boolean shouldExplore(Map<Observation, Action> explorationPolicy, Observation currentState) {
         Map<Observation, Double> probs = new HashMap<>();
@@ -113,8 +120,6 @@ public class E3 {
                 probs.put(state, 1.0);
             }
         }
-
-        long horizonTime = Math.round(1 / (1 - discount));
 
         // Find probability that we end up in a unknown state in horizonTime steps
         for (long i = 0; i < horizonTime; i++) {
@@ -148,7 +153,7 @@ public class E3 {
 
     // }}}
 
-    // Functions for updating statistics {{{
+    // Updating necessary statistics {{{
 
     /**
      * Observe a state transition.
@@ -225,7 +230,7 @@ public class E3 {
 
     // }}}
 
-    // Functions for getting visit statistics {{{
+    // Get state, action, state visit statistics {{{
 
     private Integer getVisits(Observation from) {
         Integer visits = 0;
