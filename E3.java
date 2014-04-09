@@ -11,6 +11,7 @@ public class E3<State, Action> {
 
     public double discount;
     private long horizonTime;
+    private int maxReward;
 
 
     // Transition probabilities in the MDP
@@ -20,8 +21,8 @@ public class E3<State, Action> {
     private Map<State, Map<Action, Map<State, Integer>>>
         sasv;
 
-    // State, Action -> Reward
-    private Map<Pair<State, Action>, Integer> sr;
+    // State -> Reward
+    private Map<State, Integer> rewards;
 
     // Current policy
     private Map<State, Action> currentPolicy;
@@ -40,13 +41,15 @@ public class E3<State, Action> {
      * @param actions list of all possible actions
      * @param dummyState representation of the absorbing dummystate
      */
-    public E3(double discount, List<Action> actions, State dummyState) {
+    public E3(double discount, int maxReward, List<Action> actions, State dummyState) {
         tps = new TransitionProbabilities<>();
         sasv = new HashMap<>();
-        sr = new HashMap<>();
+        rewards = new HashMap<>();
 
         // This is the absorbing state which represents all unvisited states
         this.dummyState = dummyState;
+
+        this.maxReward = maxReward;
 
         this.discount = discount;
         horizonTime = Math.round(1 / (1 - discount));
@@ -171,26 +174,82 @@ public class E3<State, Action> {
                 vf.put(state, 0.0);
             }
         }
-        vf.put(dummyState, 0.0);
+        vf.put(dummyState, (double)maxReward); // TODO: What is the value of the absorbing state
 
-        boolean notConverged = true;
-        while (notConverged) {
-            for (State state : tps.getStates()) {
-                if (!isKnown(state)) continue;
-
+        for (long t = horizonTime; t >= 1; t--) {
+            for (State state : vf.keySet()) {
                 double bestValue = 0;
-                double currentValue = 0;
-                //for (Action action : possibleActions(state)) {
-                    //for (Map.Entry<State, Double> sp : 
-                //}
+                Action bestAction = null;
+
+                for (Action action : getPossibleActions(state)) {
+                    double currentValue = 0;
+
+                    for (Map.Entry<State, Double> sp : tps.from(state, action).entrySet()) {
+                        if (isKnown(sp.getKey())) {
+                            currentValue += sp.getValue() * vf.get(sp.getKey());
+                        } else {
+                            currentValue += sp.getValue() * vf.get(dummyState);
+                        }
+                    }
+
+                    if (currentValue > bestValue) {
+                        bestValue = currentValue;
+                        bestAction = action;
+                    }
+                }
+
+                vf.put(state, getReward(state)  + discount * bestValue);
+                policy.put(state, bestAction);
             }
         }
 
-        return null;
+        return policy;
     }
 
-    private Map<State, Action> findExploitationPolicy(State state) {
-        return null;
+    private Map<State, Action> findExploitationPolicy(State currentState) {
+
+        // Value function
+        Map<State, Double> vf = new HashMap<>();
+
+        // Policy
+        Map<State, Action> policy = new HashMap<>();
+
+        // Initialize value function
+        for (State state : tps.getStates()) {
+            if (isKnown(state)) {
+                vf.put(state, 0.0);
+            }
+        }
+        vf.put(dummyState, 0.0);
+
+        for (long t = horizonTime; t >= 1; t--) {
+            for (State state : vf.keySet()) {
+                double bestValue = 0;
+                Action bestAction = null;
+
+                for (Action action : getPossibleActions(state)) {
+                    double currentValue = 0;
+
+                    for (Map.Entry<State, Double> sp : tps.from(state, action).entrySet()) {
+                        if (isKnown(sp.getKey())) {
+                            currentValue += sp.getValue() * vf.get(sp.getKey());
+                        } else {
+                            // Unknown states get no reward
+                        }
+                    }
+
+                    if (currentValue > bestValue) {
+                        bestValue = currentValue;
+                        bestAction = action;
+                    }
+                }
+
+                vf.put(state, getReward(state) + discount * bestValue);
+                policy.put(state, bestAction);
+            }
+        }
+
+        return policy;
     }
 
     // }}}
@@ -260,14 +319,14 @@ public class E3<State, Action> {
      * Update reward table.
      */
     private void updateReward(State from, Action action, State to, int reward) {
-        Pair<State, Action> p = new Pair<>(from, action);
-        Integer r = sr.get(p);
-        if (r == null) {
-            r = 0;
-        }
+        int r = rewards.get(to);
+
+        //if (r == null) {
+            //r = 0;
+        //}
 
         r += reward;
-        sr.put(p, r);
+        rewards.put(to, r);
     }
 
     // }}}
@@ -292,8 +351,8 @@ public class E3<State, Action> {
         return sasv.get(from).get(action).get(to);
     }
 
-    private Integer getReward(State from, Action action) {
-        return sr.get(new Pair<>(from, action));
+    private int getReward(State state) {
+        return rewards.get(state);
     }
 
     // }}}
