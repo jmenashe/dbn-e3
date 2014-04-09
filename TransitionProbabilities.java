@@ -2,28 +2,26 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashMap;
 
-import org.rlcommunity.rlglue.codec.types.*;
-
 /**
  * Models transition probabilities.
  * State -> Action -> State -> Double
  */
-public class TransitionProbabilities {
-    private Map<Observation, Map<Action, Map<Observation, Double>>> tp;
+public class TransitionProbabilities<State, Action> {
+    private Map<State, Map<Action, Map<State, Double>>> tp;
 
     public TransitionProbabilities() {
         tp = new HashMap<>();
     }
 
-    public Set<Observation> getStates() {
+    public Set<State> getStates() {
         return tp.keySet();
     }
 
     /**
      * Transition probabilities from a state
      */
-    public Map<Action, Map<Observation, Double>> from(Observation state) {
-        Map<Action, Map<Observation, Double>> actionStateProb = tp.get(state);
+    public Map<Action, Map<State, Double>> from(State state) {
+        Map<Action, Map<State, Double>> actionStateProb = tp.get(state);
 
         if (actionStateProb == null) {
             actionStateProb = new HashMap<>();
@@ -36,10 +34,10 @@ public class TransitionProbabilities {
     /**
      * Transition probabilities from a state and action
      */
-    public Map<Observation, Double> from(Observation state, Action action) {
-        Map<Action, Map<Observation, Double>> actionStateProb = from(state);
+    public Map<State, Double> from(State state, Action action) {
+        Map<Action, Map<State, Double>> actionStateProb = from(state);
 
-        Map<Observation, Double> stateProb = actionStateProb.get(action);
+        Map<State, Double> stateProb = actionStateProb.get(action);
         
         if (stateProb == null) {
             stateProb = new HashMap<>();
@@ -52,14 +50,14 @@ public class TransitionProbabilities {
     /**
      * All actions taken from a state
      */
-    public Set<Action> actionsFromState(Observation state) {
+    public Set<Action> actionsFromState(State state) {
         return from(state).keySet();
     }
 
     /**
      * Set probability
      */
-    public void setTP(Observation fromState, Action action, Observation toState, Double prob) {
+    public void setTP(State fromState, Action action, State toState, Double prob) {
         from(fromState, action).put(toState, prob);
     }
 }
