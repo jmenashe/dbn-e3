@@ -11,8 +11,7 @@ public class E3<State, Action> {
 
     public double discount;
     private long horizonTime;
-    private int maxReward;
-
+    private double maxReward;
 
     // Transition probabilities in the MDP
     private TransitionProbabilities<State, Action> tps;
@@ -22,7 +21,7 @@ public class E3<State, Action> {
         sasv;
 
     // State -> Reward
-    private Map<State, Integer> rewards;
+    private Map<State, Double> rewards;
 
     // Current policy
     private Map<State, Action> currentPolicy;
@@ -38,10 +37,11 @@ public class E3<State, Action> {
 
     /**
      * @param discount discount factor
+     * @param maxReward the maximum possible reward
      * @param actions list of all possible actions
      * @param dummyState representation of the absorbing dummystate
      */
-    public E3(double discount, int maxReward, List<Action> actions, State dummyState) {
+    public E3(double discount, double maxReward, List<Action> actions, State dummyState) {
         tps = new TransitionProbabilities<>();
         sasv = new HashMap<>();
         rewards = new HashMap<>();
@@ -55,6 +55,11 @@ public class E3<State, Action> {
         horizonTime = Math.round(1 / (1 - discount));
         possibleActions = actions;
     }
+
+    private void l(Object obj) {
+        System.out.println(obj);
+    }
+
 
     // Picking the next action {{{
 
@@ -174,7 +179,8 @@ public class E3<State, Action> {
                 vf.put(state, 0.0);
             }
         }
-        vf.put(dummyState, (double)maxReward); // TODO: What is the value of the absorbing state
+        vf.put(dummyState, 0.0);
+        updateReward(null, null, dummyState, maxReward);
 
         for (long t = horizonTime; t >= 1; t--) {
             for (State state : vf.keySet()) {
@@ -198,7 +204,7 @@ public class E3<State, Action> {
                     }
                 }
 
-                vf.put(state, getReward(state)  + discount * bestValue);
+                vf.put(state, getReward(state) + discount * bestValue);
                 policy.put(state, bestAction);
             }
         }
@@ -221,6 +227,7 @@ public class E3<State, Action> {
             }
         }
         vf.put(dummyState, 0.0);
+        updateReward(null, null, dummyState, 0.0);
 
         for (long t = horizonTime; t >= 1; t--) {
             for (State state : vf.keySet()) {
@@ -263,7 +270,7 @@ public class E3<State, Action> {
             State from, 
             Action action,
             State to,
-            int reward
+            double reward
     ) {
         // Log the visit
         updateVisits(from, action, to);
@@ -318,12 +325,12 @@ public class E3<State, Action> {
     /**
      * Update reward table.
      */
-    private void updateReward(State from, Action action, State to, int reward) {
-        int r = rewards.get(to);
+    private void updateReward(State from, Action action, State to, double reward) {
+        Double r = rewards.get(to);
 
-        //if (r == null) {
-            //r = 0;
-        //}
+        if (r == null) {
+            r = 0.0;
+        }
 
         r += reward;
         rewards.put(to, r);
@@ -333,25 +340,37 @@ public class E3<State, Action> {
 
     // Get state, action, state visit statistics {{{
 
-    private Integer getVisits(State from) {
-        Integer visits = 0;
-        for (Action action : sasv.get(from).keySet()) {
-            visits += getVisits(from, action);
-        }
+    private int getVisits(State from) {
+        int visits = 0;
+
+        try {
+            for (Action action : sasv.get(from).keySet()) {
+                visits += getVisits(from, action);
+            }
+        } catch (NullPointerException e) {}
+
         return visits;
     }
-    private Integer getVisits(State from, Action action) {
-        Integer visits = 0;
-        for (Integer count : sasv.get(from).get(action).values()) {
-            visits += count;
-        }
+    private int getVisits(State from, Action action) {
+        int visits = 0;
+
+        try {
+            for (int count : sasv.get(from).get(action).values()) {
+                visits += count;
+            }
+        } catch (NullPointerException e) {}
+
         return visits;
     }
-    private Integer getVisits(State from, Action action, State to) {
-        return sasv.get(from).get(action).get(to);
+    private int getVisits(State from, Action action, State to) {
+        try {
+            return sasv.get(from).get(action).get(to);
+        } catch (NullPointerException e) {
+            return 0;
+        }
     }
 
-    private int getReward(State state) {
+    private double getReward(State state) {
         return rewards.get(state);
     }
 

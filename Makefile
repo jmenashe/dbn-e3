@@ -9,4 +9,4 @@ test: default
 	java RunAll
 
 clean:
-	rm *.class
+	-rm *.class
