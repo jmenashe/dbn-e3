@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * An implementation of the E3 algorithm.
+ * An implementation of the E3 algorithm in a discounted MDP.
  *
  */
 public class E3<State, Action> {
@@ -35,6 +35,11 @@ public class E3<State, Action> {
     // This is the absorbing state which represents all unvisited states
     private State dummyState;
 
+    /**
+     * @param discount discount factor
+     * @param actions list of all possible actions
+     * @param dummyState representation of the absorbing dummystate
+     */
     public E3(double discount, List<Action> actions, State dummyState) {
         tps = new TransitionProbabilities<>();
         sasv = new HashMap<>();
@@ -44,9 +49,11 @@ public class E3<State, Action> {
         this.dummyState = dummyState;
 
         this.discount = discount;
-        horizonTime = Math.round(1 / (1 - discount)); 
+        horizonTime = Math.round(1 / (1 - discount));
         possibleActions = actions;
     }
+
+    // Picking the next action {{{
 
     /**
      * Find the next action.
@@ -64,7 +71,7 @@ public class E3<State, Action> {
         if (currentPolicy == null) {
             currentPolicy = findExplorationPolicy(state);
 
-            // Should we use an exploitation policy instead?
+            // Should we really explore?
             if (!shouldExplore(currentPolicy, state)) {
                 currentPolicy = findExploitationPolicy(state);
             }
@@ -143,7 +150,9 @@ public class E3<State, Action> {
         return probs.get(currentState) > 0.05;
     }
 
-    // Policy calulations {{{
+    // }}}
+
+    // Policy calculations {{{
 
     /**
      * Performs value iteration in to find a policy that explores new states within horizonTime
