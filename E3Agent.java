@@ -46,6 +46,7 @@ public class E3Agent implements AgentInterface {
     public Action agent_start(Observation state) {
         lastState = state;
 
+
         return lastAction;
     }
 
@@ -55,7 +56,7 @@ public class E3Agent implements AgentInterface {
         lastState = state;
         lastAction = e3.nextAction(state);
 
-        //l("State: " + Arrays.toString(lastState.intArray) + " Action: " + Arrays.toString(lastAction.intArray) + ", " + e3.policy + ", " + reward);
+        l("State: " + Arrays.toString(lastState.intArray) + " Action: " + Arrays.toString(lastAction.intArray) + ", " + e3.policy + ", " + reward);
 
         return lastAction;
     }

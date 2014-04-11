@@ -1,8 +1,6 @@
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.rlcommunity.rlglue.codec.types.*;
 
@@ -20,7 +18,9 @@ public class E3<S, A> {
 
     // State, Action, State -> Visits
     private Map<Observation, Map<Action, Map<Observation, Integer>>>
-        sasv;
+            stateActionStateVisits;
+    private Map<Observation, Map<Action, Integer>> stateActionVisits;
+    private Map<Observation, Integer> stateVisits;
 
     // State -> Reward
     private Map<Observation, Double> rewards;
@@ -45,7 +45,11 @@ public class E3<S, A> {
      */
     public E3(double discount, double maxReward, List<Action> actions, Observation dummyState) {
         tps = new TransitionProbabilities<>();
-        sasv = new HashMap<>();
+
+        stateActionStateVisits = new HashMap<>();
+        stateActionVisits = new HashMap<>();
+        stateVisits = new HashMap<>();
+
         rewards = new HashMap<>();
 
         // This is the absorbing state which represents all unvisited states
@@ -64,7 +68,7 @@ public class E3<S, A> {
 
 
     // Picking the next action {{{
-    //
+
     public String policy = "";
 
     /**
@@ -187,16 +191,14 @@ public class E3<S, A> {
             }
         }
         vf.put(dummyState, 0.0);
-        updateReward(null, null, dummyState, maxReward);
+        setReward(dummyState, maxReward);
 
-        for (long t = horizonTime; t >= 1; t--) {
+        for (long t = 0; t < horizonTime; t++) {
             for (Observation state : vf.keySet()) {
                 double bestValue = 0;
                 Action bestAction = null;
 
                 for (Action action : getPossibleActions(state)) {
-                    if (bestAction == null) { bestAction = action; }
-
                     double currentValue = 0;
 
                     for (Map.Entry<Observation, Double> sp : tps.from(state, action).entrySet()) {
@@ -236,9 +238,9 @@ public class E3<S, A> {
             }
         }
         vf.put(dummyState, 0.0);
-        updateReward(null, null, dummyState, 0.0);
+        setReward(dummyState, 0.0);
 
-        for (long t = horizonTime; t >= 1; t--) {
+        for (long t = 0; t < horizonTime; t++) {
             for (Observation state : vf.keySet()) {
                 double bestValue = 0;
                 Action bestAction = null;
@@ -288,17 +290,29 @@ public class E3<S, A> {
         updateTP(from, action, to);
 
         // Update reward table
-        updateReward(from, action, to, reward);
+        updateReward(to, reward);
     }
 
     /**
      * Update visits statistics
      */
     private void updateVisits(Observation from, Action action, Observation to) {
-        Map<Action, Map<Observation, Integer>> asv = sasv.get(from);
+        // State visits
+        stateVisits.put(from, stateVisits.containsKey(from) ? stateVisits.get(from) + 1 : 1);
+
+        // State X Action visits
+        Map<Action, Integer> av = stateActionVisits.get(from);
+        if (av == null) {
+            av = new HashMap<>();
+            stateActionVisits.put(from, av);
+        }
+        av.put(action, av.containsKey(action) ? av.get(action) + 1 : 1);
+
+        // State X Action X State visits
+        Map<Action, Map<Observation, Integer>> asv = stateActionStateVisits.get(from);
         if (asv == null) {
             asv = new HashMap<>();
-            sasv.put(from, asv);
+            stateActionStateVisits.put(from, asv);
         }
 
         Map<Observation, Integer> sv = asv.get(action);
@@ -316,13 +330,15 @@ public class E3<S, A> {
         sv.put(to, v);
     }
 
+
+
     /**
      * Update the transition probabilities
      */
     private void updateTP(Observation from, Action action, Observation to) {
         int sav = getVisits(from, action);
 
-        for (Map.Entry<Observation, Integer> sv : sasv.get(from).get(action).entrySet()) {
+        for (Map.Entry<Observation, Integer> sv : stateActionStateVisits.get(from).get(action).entrySet()) {
             tps.setTP(
                     from,
                     action,
@@ -334,45 +350,42 @@ public class E3<S, A> {
     /**
      * Update reward table.
      */
-    private void updateReward(Observation from, Action action, Observation to, double reward) {
-        double r = 0;
+    private void updateReward(Observation to, double reward) {
+        int visits = getVisits(to);
+
+        double oldReward = 0;
+
         if (rewards.containsKey(to)) {
-            r = rewards.get(to);
+            oldReward = rewards.get(to);
         }
 
-        r += reward;
-        rewards.put(to, r);
+        rewards.put(to, (reward + oldReward * visits) / (visits + 1));
+    }
+
+    /**
+     * Update reward table.
+     */
+    private void setReward(Observation to, double reward) {
+        rewards.put(to, reward);
     }
 
     // }}}
 
     // Get state, action, state visit statistics {{{
 
-    private int getVisits(Observation from) {
-        int visits = 0;
-
-        try {
-            for (Action action : sasv.get(from).keySet()) {
-                visits += getVisits(from, action);
-            }
-        } catch (NullPointerException e) {}
-
-        return visits;
+    private int getVisits(Observation state) {
+        return stateVisits.containsKey(state) ? stateVisits.get(state) : 0;
     }
     private int getVisits(Observation from, Action action) {
-        int visits = 0;
-
         try {
-            for (int count : sasv.get(from).get(action).values()) {
-                visits += count;
-            }
+            return stateActionVisits.get(from).get(action);
         } catch (NullPointerException e) {}
 
-        return visits;
+        return 0;
     }
     private int getVisits(Observation from, Action action, Observation to) {
         try {
-            return sasv.get(from).get(action).get(to);
+            return stateActionStateVisits.get(from).get(action).get(to);
         } catch (NullPointerException e) {
             return 0;
         }
