@@ -5,6 +5,7 @@ import org.rlcommunity.rlglue.codec.types.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 
 public class E3Agent implements AgentInterface {
 
@@ -53,6 +54,8 @@ public class E3Agent implements AgentInterface {
 
         lastState = state;
         lastAction = e3.nextAction(state);
+
+        //l("State: " + Arrays.toString(lastState.intArray) + " Action: " + Arrays.toString(lastAction.intArray) + ", " + e3.policy + ", " + reward);
 
         return lastAction;
     }

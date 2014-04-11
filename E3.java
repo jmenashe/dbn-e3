@@ -2,29 +2,31 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
+
+import org.rlcommunity.rlglue.codec.types.*;
 
 /**
  * An implementation of the E3 algorithm in a discounted MDP.
- *
  */
-public class E3<State, Action> {
+public class E3<S, A> {
 
     public double discount;
     private long horizonTime;
     private double maxReward;
 
     // Transition probabilities in the MDP
-    private TransitionProbabilities<State, Action> tps;
+    private TransitionProbabilities<Observation, Action> tps;
 
     // State, Action, State -> Visits
-    private Map<State, Map<Action, Map<State, Integer>>>
+    private Map<Observation, Map<Action, Map<Observation, Integer>>>
         sasv;
 
     // State -> Reward
-    private Map<State, Double> rewards;
+    private Map<Observation, Double> rewards;
 
     // Current policy
-    private Map<State, Action> currentPolicy;
+    private Map<Observation, Action> currentPolicy;
 
     // Current time we have expl*
     private long currentTime;
@@ -33,7 +35,7 @@ public class E3<State, Action> {
     private List<Action> possibleActions;
 
     // This is the absorbing state which represents all unvisited states
-    private State dummyState;
+    private Observation dummyState;
 
     /**
      * @param discount discount factor
@@ -41,7 +43,7 @@ public class E3<State, Action> {
      * @param actions list of all possible actions
      * @param dummyState representation of the absorbing dummystate
      */
-    public E3(double discount, double maxReward, List<Action> actions, State dummyState) {
+    public E3(double discount, double maxReward, List<Action> actions, Observation dummyState) {
         tps = new TransitionProbabilities<>();
         sasv = new HashMap<>();
         rewards = new HashMap<>();
@@ -62,14 +64,17 @@ public class E3<State, Action> {
 
 
     // Picking the next action {{{
+    //
+    public String policy = "";
 
     /**
      * Find the next action.
      */
-    public Action nextAction(State state) {
+    public Action nextAction(Observation state) {
 
         // Unknown state or expl* long enough: balanced wandering
         if (!isKnown(state) || currentTime >= horizonTime) {
+            policy = "balancing";
             currentPolicy = null;
             currentTime = 0;
             return balancedWandering(state);
@@ -78,10 +83,12 @@ public class E3<State, Action> {
         // Start exploitation/exploration
         if (currentPolicy == null) {
             currentPolicy = findExplorationPolicy(state);
+            policy = "exploration";
 
             // Should we really explore?
             if (!shouldExplore(currentPolicy, state)) {
                 currentPolicy = findExploitationPolicy(state);
+                policy = "exploitation";
             }
         }
 
@@ -92,7 +99,7 @@ public class E3<State, Action> {
     /**
      * Find the balanced wandering action
      */
-    private Action balancedWandering(State state) {
+    private Action balancedWandering(Observation state) {
         Action balancingAction = null;
 
         for (Action action : getPossibleActions(state)) {
@@ -110,7 +117,7 @@ public class E3<State, Action> {
      * All possible actions in a state
      * TODO: Return an iterator over all possible actions from state
      */
-    private List<Action> getPossibleActions(State state) {
+    private List<Action> getPossibleActions(Observation state) {
         return possibleActions;
     }
 
@@ -119,18 +126,18 @@ public class E3<State, Action> {
      *
      * TODO: This :). See E3 paper.
      */
-    private boolean isKnown(State state) {
-        return getVisits(state) > 100;
+    private boolean isKnown(Observation state) {
+        return getVisits(state) > 10;
     }
 
     /**
      * Should we explore given some policy?
      */
-    private boolean shouldExplore(Map<State, Action> explorationPolicy, State currentState) {
-        Map<State, Double> probs = new HashMap<>();
+    private boolean shouldExplore(Map<Observation, Action> explorationPolicy, Observation currentState) {
+        Map<Observation, Double> probs = new HashMap<>();
 
         // Starting probabilities are 0 for known states and 1 for unknown
-        for (State state : tps.getStates()) {
+        for (Observation state : tps.getStates()) {
             if (isKnown(state)) {
                 probs.put(state, 0.0);
             } else {
@@ -140,13 +147,13 @@ public class E3<State, Action> {
 
         // Find probability that we end up in a unknown state in horizonTime steps
         for (long i = 0; i < horizonTime; i++) {
-            for (State state : tps.getStates()) {
+            for (Observation state : tps.getStates()) {
                 if (isKnown(state)) {
                     double probability = 0;
 
                     // For all possible transitions, multiply transition
                     // probability by the stored value for the target state. 
-                    for (Map.Entry<State, Double> sp : tps.from(state, explorationPolicy.get(state)).entrySet()) {
+                    for (Map.Entry<Observation, Double> sp : tps.from(state, explorationPolicy.get(state)).entrySet()) {
                         probability += probs.get(sp.getKey()) * sp.getValue();
                     }
                     probs.put(state, probability);
@@ -165,16 +172,16 @@ public class E3<State, Action> {
     /**
      * Performs value iteration in to find a policy that explores new states within horizonTime
      */
-    private Map<State, Action> findExplorationPolicy(State currentState) {
+    private Map<Observation, Action> findExplorationPolicy(Observation currentState) {
 
         // Value function
-        Map<State, Double> vf = new HashMap<>();
+        Map<Observation, Double> vf = new HashMap<>();
 
         // Policy
-        Map<State, Action> policy = new HashMap<>();
+        Map<Observation, Action> policy = new HashMap<>();
 
         // Initialize value function
-        for (State state : tps.getStates()) {
+        for (Observation state : tps.getStates()) {
             if (isKnown(state)) {
                 vf.put(state, 0.0);
             }
@@ -183,18 +190,20 @@ public class E3<State, Action> {
         updateReward(null, null, dummyState, maxReward);
 
         for (long t = horizonTime; t >= 1; t--) {
-            for (State state : vf.keySet()) {
+            for (Observation state : vf.keySet()) {
                 double bestValue = 0;
                 Action bestAction = null;
 
                 for (Action action : getPossibleActions(state)) {
+                    if (bestAction == null) { bestAction = action; }
+
                     double currentValue = 0;
 
-                    for (Map.Entry<State, Double> sp : tps.from(state, action).entrySet()) {
+                    for (Map.Entry<Observation, Double> sp : tps.from(state, action).entrySet()) {
                         if (isKnown(sp.getKey())) {
                             currentValue += sp.getValue() * vf.get(sp.getKey());
                         } else {
-                            currentValue += sp.getValue() * vf.get(dummyState);
+                            currentValue += sp.getValue() * vf.get(dummyState) * t;
                         }
                     }
 
@@ -212,16 +221,16 @@ public class E3<State, Action> {
         return policy;
     }
 
-    private Map<State, Action> findExploitationPolicy(State currentState) {
+    private Map<Observation, Action> findExploitationPolicy(Observation currentState) {
 
         // Value function
-        Map<State, Double> vf = new HashMap<>();
+        Map<Observation, Double> vf = new HashMap<>();
 
         // Policy
-        Map<State, Action> policy = new HashMap<>();
+        Map<Observation, Action> policy = new HashMap<>();
 
         // Initialize value function
-        for (State state : tps.getStates()) {
+        for (Observation state : tps.getStates()) {
             if (isKnown(state)) {
                 vf.put(state, 0.0);
             }
@@ -230,14 +239,14 @@ public class E3<State, Action> {
         updateReward(null, null, dummyState, 0.0);
 
         for (long t = horizonTime; t >= 1; t--) {
-            for (State state : vf.keySet()) {
+            for (Observation state : vf.keySet()) {
                 double bestValue = 0;
                 Action bestAction = null;
 
                 for (Action action : getPossibleActions(state)) {
                     double currentValue = 0;
 
-                    for (Map.Entry<State, Double> sp : tps.from(state, action).entrySet()) {
+                    for (Map.Entry<Observation, Double> sp : tps.from(state, action).entrySet()) {
                         if (isKnown(sp.getKey())) {
                             currentValue += sp.getValue() * vf.get(sp.getKey());
                         } else {
@@ -267,9 +276,9 @@ public class E3<State, Action> {
      * Observe a state transition.
      */
     public void observe(
-            State from, 
+            Observation from, 
             Action action,
-            State to,
+            Observation to,
             double reward
     ) {
         // Log the visit
@@ -285,14 +294,14 @@ public class E3<State, Action> {
     /**
      * Update visits statistics
      */
-    private void updateVisits(State from, Action action, State to) {
-        Map<Action, Map<State, Integer>> asv = sasv.get(from);
+    private void updateVisits(Observation from, Action action, Observation to) {
+        Map<Action, Map<Observation, Integer>> asv = sasv.get(from);
         if (asv == null) {
             asv = new HashMap<>();
             sasv.put(from, asv);
         }
 
-        Map<State, Integer> sv = asv.get(action);
+        Map<Observation, Integer> sv = asv.get(action);
         if (sv == null) {
             sv = new HashMap<>();
             asv.put(action, sv);
@@ -310,10 +319,10 @@ public class E3<State, Action> {
     /**
      * Update the transition probabilities
      */
-    private void updateTP(State from, Action action, State to) {
+    private void updateTP(Observation from, Action action, Observation to) {
         int sav = getVisits(from, action);
 
-        for (Map.Entry<State, Integer> sv : sasv.get(from).get(action).entrySet()) {
+        for (Map.Entry<Observation, Integer> sv : sasv.get(from).get(action).entrySet()) {
             tps.setTP(
                     from,
                     action,
@@ -325,11 +334,10 @@ public class E3<State, Action> {
     /**
      * Update reward table.
      */
-    private void updateReward(State from, Action action, State to, double reward) {
-        Double r = rewards.get(to);
-
-        if (r == null) {
-            r = 0.0;
+    private void updateReward(Observation from, Action action, Observation to, double reward) {
+        double r = 0;
+        if (rewards.containsKey(to)) {
+            r = rewards.get(to);
         }
 
         r += reward;
@@ -340,7 +348,7 @@ public class E3<State, Action> {
 
     // Get state, action, state visit statistics {{{
 
-    private int getVisits(State from) {
+    private int getVisits(Observation from) {
         int visits = 0;
 
         try {
@@ -351,7 +359,7 @@ public class E3<State, Action> {
 
         return visits;
     }
-    private int getVisits(State from, Action action) {
+    private int getVisits(Observation from, Action action) {
         int visits = 0;
 
         try {
@@ -362,7 +370,7 @@ public class E3<State, Action> {
 
         return visits;
     }
-    private int getVisits(State from, Action action, State to) {
+    private int getVisits(Observation from, Action action, Observation to) {
         try {
             return sasv.get(from).get(action).get(to);
         } catch (NullPointerException e) {
@@ -370,7 +378,7 @@ public class E3<State, Action> {
         }
     }
 
-    private double getReward(State state) {
+    private double getReward(Observation state) {
         return rewards.get(state);
     }
 
