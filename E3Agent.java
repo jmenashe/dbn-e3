@@ -56,7 +56,7 @@ public class E3Agent implements AgentInterface {
         lastState = state;
         lastAction = e3.nextAction(state);
 
-        l("State: " + Arrays.toString(lastState.intArray) + " Action: " + Arrays.toString(lastAction.intArray) + ", " + e3.policy + ", " + reward);
+        //l("State: " + Arrays.toString(lastState.intArray) + " Action: " + Arrays.toString(lastAction.intArray) + ", " + e3.policy + ", " + reward);
 
         return lastAction;
     }
@@ -71,7 +71,7 @@ public class E3Agent implements AgentInterface {
     }
 
     public String agent_message(String message) {
-        return "FUCK OFF";
+        return "E3 agent, win edition.";
     }
 
     public static void main(String[] args) {
