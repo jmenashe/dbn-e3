@@ -7,7 +7,7 @@ import org.rlcommunity.rlglue.codec.types.*;
 /**
  * An implementation of the E3 algorithm in a discounted MDP.
  */
-public class E3<S, A> {
+public class E3 {
 
     public double discount;
     private long horizonTime;

@@ -5,11 +5,10 @@ import org.rlcommunity.rlglue.codec.types.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Arrays;
 
 public class E3Agent implements AgentInterface {
 
-    private E3<Observation, Action> e3;
+    private E3 e3;
 
     private Observation lastState;
     private Action lastAction;
@@ -31,7 +30,7 @@ public class E3Agent implements AgentInterface {
 
         lastAction = allActions.get(0);
 
-        e3 = new E3<Observation, Action>(
+        e3 = new E3(
                 0.95,
                 rewardRange.getMax(), // max reward
                 allActions,
