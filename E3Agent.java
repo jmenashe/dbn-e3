@@ -31,7 +31,8 @@ public class E3Agent implements AgentInterface {
         lastAction = allActions.get(0);
 
         e3 = new E3(
-                0.95,
+                0.95, // Discount
+                0.90, // epsilon
                 rewardRange.getMax(), // max reward
                 allActions,
                 new Observation(0, 0, 0)

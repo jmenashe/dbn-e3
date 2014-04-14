@@ -10,6 +10,7 @@ import org.rlcommunity.rlglue.codec.types.*;
 public class E3 {
 
     public double discount;
+    private double eps;
     private long horizonTime;
     private double maxReward;
 
@@ -39,11 +40,17 @@ public class E3 {
 
     /**
      * @param discount discount factor
+     * @param eps the epsilon parameter
      * @param maxReward the maximum possible reward
      * @param actions list of all possible actions
      * @param dummyState representation of the absorbing dummystate
      */
-    public E3(double discount, double maxReward, List<Action> actions, Observation dummyState) {
+    public E3(
+            double discount,
+            double eps,
+            double maxReward,
+            List<Action> actions,
+            Observation dummyState) {
         tps = new TransitionProbabilities<>();
 
         stateActionStateVisits = new HashMap<>();
@@ -58,7 +65,8 @@ public class E3 {
         this.maxReward = maxReward;
 
         this.discount = discount;
-        horizonTime = Math.round(1 / (1 - discount));
+        this.eps = eps;
+        horizonTime = Math.round((1 / (1 - discount)));
         possibleActions = actions;
     }
 
