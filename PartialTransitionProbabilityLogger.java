@@ -229,7 +229,49 @@ public class PartialTransitionProbabilityLogger {
 	public Iterator<Observation> knownStateIterator() {
 		return null;
 	}
-
+	
+	public List<Observation> statesFromPartialStates(Observation wholeState, Action action) {
+		List<List<Integer>> seenStates = new LinkedList<>();
+		for (int stateIndex = 0; stateIndex < wholeState.intArray.length; stateIndex++) {
+			Map<PartialState, Map<Action, Map<Integer, Double>>> map = 
+					p.get(stateIndex);
+			PartialState ps = new PartialState(wholeState, connections.get(stateIndex));
+			
+			Map<Action, Map<Integer, Double>> map2 = map.get(ps);
+			seenStates.add(new ArrayList<Integer>(map2.get(action).keySet()));
+		}
+		List<Observation> returnList = new ArrayList<>(); 
+		for (List<Integer> l :  nextStates(seenStates)) {
+			Observation o = new Observation(l.size(), 0);
+			for(int i =0; i < l.size(); i++) {
+				o.setInt(i, l.get(i));
+			}
+			returnList.add(o);
+		}
+		return returnList;
+	}
+	
+	public static List<List<Integer>>nextStates(List<List<Integer>> input) {
+		int max = 1;
+		int[] sizes = new int[input.size()];
+		int k = 0;
+		for(List<Integer> l : input) {
+			max *= l.size();
+			sizes[k++] = l.size();
+		}
+		List<List<Integer>> returnList = new LinkedList<>();
+		for(int i = 0; i < max; i++) {
+			int iCpy = i;
+			List<Integer> subList = new LinkedList<>(); 
+			for (int j = 0; j < input.size(); j++) {
+				subList.add(input.get(j).get(iCpy % sizes[j]));
+				iCpy = iCpy / sizes[j];
+			}
+			returnList.add(subList);
+		}
+		return returnList;
+	}
+	
 	public static void main(String[] args) {
 		ArrayList<Integer> apa = new ArrayList<>();
 		ArrayList<Integer> bepa = new ArrayList<>();
@@ -283,7 +325,7 @@ public class PartialTransitionProbabilityLogger {
 		to.intArray[1] = 1;
 		to.intArray[2] = 0;
 		ptpl.record(from, action, to);
-		to.intArray[0] = 0;
+		to.intArray[0] = 1;
 		to.intArray[1] = 0;
 		to.intArray[2] = 1;
 		ptpl.record(from, action, to);
@@ -297,7 +339,8 @@ public class PartialTransitionProbabilityLogger {
 		System.out.println("probability: "
 				+ ptpl.getProbability(0, ps, action, 0));
 
-		System.out.println(ptpl.getKnown());
+		//System.out.println(ptpl.getKnown());
+		System.out.println(ptpl.statesFromPartialStates(from, action));
 		
 	}
 }
