@@ -230,6 +230,7 @@ public class PartialTransitionProbabilityLogger {
         return null;
     }
 
+    /*
     public static void main(String[] args) {
         ArrayList<Integer> apa = new ArrayList<>();
         ArrayList<Integer> bepa = new ArrayList<>();
@@ -300,6 +301,36 @@ public class PartialTransitionProbabilityLogger {
         System.out.println(ptpl.getKnown());
 
     }
+*/
+    public static List<List<Integer>> getPossibleNextStates(List<List<Integer>> sets) {
+        List<List<Integer>> newSets = new LinkedList<>();
+        int solutions = 1;
+        for (int i = 0; i < sets.size(); solutions *= sets.get(i).size(), i++) ;
+
+        for (int i = 0; i < solutions; i++) {
+            int j = 1;
+            List<Integer> newInnerSet = new LinkedList<>();
+            for (List<Integer> set : sets) {
+                newInnerSet.add(set.get(i / j) % set.size());
+                j *= set.size();
+            }
+            newSets.add(newInnerSet);
+        }
+        return newSets;
+    }
+
+    public static void generate(int[][] sets) {
+        int solutions = 1;
+        for(int i = 0; i < sets.length; solutions *= sets[i].length, i++);
+        for(int i = 0; i < solutions; i++) {
+            int j = 1;
+            for(int[] set : sets) {
+                System.out.print(set[(i/j)%set.length] + " ");
+                j *= set.length;
+            }
+            System.out.println();
+        }
+    }
 
     private double getProbability(Observation currentState, Action action, Observation nextState) {
         double product = 1;
@@ -318,12 +349,8 @@ public class PartialTransitionProbabilityLogger {
         return p.get(i).get(ps).get(action).get(currentState.intArray[i]);
     }
 
-    private class JointDistributionCalculator {
+    public static void main(String[] args) {
 
-        public Observation nextState(Observation state, Action action) {
-            return state;
-        }
-
-
+        generate(new int[][]{{0,1},{1}, {0,1}, {1}});
     }
 }
