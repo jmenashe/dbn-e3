@@ -32,50 +32,18 @@ public class E3Agent implements AgentInterface {
 
         lastAction = allActions.get(0);
 
-        String responseMessage = RLGlue
-                .RL_env_message("tell me your connections");
 
-        Map<Integer, List<Integer>> connections = parseConnectionMessage(responseMessage);
-        Map<Integer, List<Integer>> possibleStates = parsePossibleStates(taskspec);
-
-        PartialTransitionProbabilityLogger ptpl = new PartialTransitionProbabilityLogger(
-                connections, allActions, possibleStates, 10);
-
+        
         e3 = new E3(0.95, // Discount
                 0.90, // epsilon
                 rewardRange.getMax(), // max reward
-                allActions, ptpl, new Observation(0, 0, 0));
+                allActions, 
+                taskspec,
+                new Observation(0, 0, 0));
     }
 
-    private Map<Integer, List<Integer>> parseConnectionMessage(
-            String responseMessage) {
-        Map<Integer, List<Integer>> returnMap = new HashMap<>();
-        String[] connections = responseMessage.split(":");
-        for (int i = 0; i < connections.length; i++) {
-            List<Integer> list = new ArrayList<Integer>();
-            for (String nr : connections[i].split("\\s+")) {
-                int a = Integer.parseInt(nr);
-                list.add(a);
-            }
-            returnMap.put(i, list);
-        }
-        return returnMap;
-    }
 
-    private Map<Integer, List<Integer>> parsePossibleStates(TaskSpec taskspec) {
-        Map<Integer, List<Integer>> possibleStates = new HashMap<>();
-        int stateCount = taskspec.getNumDiscreteObsDims();
 
-        for (int i = 0; i < stateCount; i++) {
-            List<Integer> list = new ArrayList<>();
-            IntRange ir = taskspec.getDiscreteObservationRange(i);
-            for (int j = ir.getMin(); j < ir.getMax(); j++) {
-                list.add(j);
-            }
-            possibleStates.put(i, list);
-        }
-        return possibleStates;
-    }
 
     private void l(Object obj) {
         System.out.println(obj);
