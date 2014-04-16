@@ -36,7 +36,7 @@ public class PartialStateWithIndex {
 	}
 	
 	public String toString() {
-		return new StringBuilder("pswi: state").append(state).
+		return new StringBuilder("pswi: state: ").append(state).
 				append(" index: ").append(index).toString();
 	}
 }
