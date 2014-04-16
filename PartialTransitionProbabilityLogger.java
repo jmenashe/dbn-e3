@@ -290,6 +290,7 @@ public class PartialTransitionProbabilityLogger {
 	    return smallest;
     }
 
+    /*
     public static void main(String[] args) {
         ArrayList<Integer> apa = new ArrayList<>();
         ArrayList<Integer> bepa = new ArrayList<>();
@@ -343,7 +344,7 @@ public class PartialTransitionProbabilityLogger {
         to.intArray[1] = 1;
         to.intArray[2] = 0;
         ptpl.record(from, action, to);
-        to.intArray[0] = 1;
+        to.intArray[0] = 0;
         to.intArray[1] = 0;
         to.intArray[2] = 1;
         ptpl.record(from, action, to);
@@ -357,8 +358,24 @@ public class PartialTransitionProbabilityLogger {
         System.out.println("probability: "
                 + ptpl.getProbability(0, ps, action, 0));
 
-        // System.out.println(ptpl.getKnown());
-        System.out.println(ptpl.statesFromPartialStates(from, action));
+*/
 
+
+    private double getProbability(Observation currentState, Action action, Observation nextState) {
+        double product = 1;
+        for (int i = 0; i < connections.size(); i++) {
+            try {
+                PartialState ps = new PartialState(currentState, connections.get(i));
+                product *= getPartialProbability(currentState, action, i, ps);
+            } catch (NullPointerException e) {
+                return 0;
+            }
+        }
+        return product;
     }
+
+    private double getPartialProbability(Observation currentState, Action action, int i, PartialState ps) {
+        return p.get(i).get(ps).get(action).get(currentState.intArray[i]);
+    }
+
 }
