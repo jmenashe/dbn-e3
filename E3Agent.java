@@ -4,7 +4,9 @@ import org.rlcommunity.rlglue.codec.taskspec.ranges.*;
 import org.rlcommunity.rlglue.codec.types.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class E3Agent implements AgentInterface {
 
@@ -23,20 +25,56 @@ public class E3Agent implements AgentInterface {
         // Only consider one-dimensional actions
         List<Action> allActions = new ArrayList<>();
         for (int i = actionRange.getMin(); i <= actionRange.getMax(); i++) {
-            Action act = new Action(1,0,0);
+            Action act = new Action(1, 0, 0);
             act.setInt(0, i);
             allActions.add(act);
         }
 
         lastAction = allActions.get(0);
 
-        e3 = new E3(
-                0.95, // Discount
+        String responseMessage = RLGlue
+                .RL_env_message("tell me your connections");
+
+        Map<Integer, List<Integer>> connections = parseConnectionMessage(responseMessage);
+        Map<Integer, List<Integer>> possibleStates = parsePossibleStates(taskspec);
+
+        PartialTransitionProbabilityLogger ptpl = new PartialTransitionProbabilityLogger(
+                connections, allActions, possibleStates, 10);
+
+        e3 = new E3(0.95, // Discount
                 0.90, // epsilon
                 rewardRange.getMax(), // max reward
-                allActions,
-                new Observation(0, 0, 0)
-                );
+                allActions, ptpl, new Observation(0, 0, 0));
+    }
+
+    private Map<Integer, List<Integer>> parseConnectionMessage(
+            String responseMessage) {
+        Map<Integer, List<Integer>> returnMap = new HashMap<>();
+        String[] connections = responseMessage.split(":");
+        for (int i = 0; i < connections.length; i++) {
+            List<Integer> list = new ArrayList<Integer>();
+            for (String nr : connections[i].split("\\s+")) {
+                int a = Integer.parseInt(nr);
+                list.add(a);
+            }
+            returnMap.put(i, list);
+        }
+        return returnMap;
+    }
+
+    private Map<Integer, List<Integer>> parsePossibleStates(TaskSpec taskspec) {
+        Map<Integer, List<Integer>> possibleStates = new HashMap<>();
+        int stateCount = taskspec.getNumDiscreteObsDims();
+
+        for (int i = 0; i < stateCount; i++) {
+            List<Integer> list = new ArrayList<>();
+            IntRange ir = taskspec.getDiscreteObservationRange(i);
+            for (int j = ir.getMin(); j < ir.getMax(); j++) {
+                list.add(j);
+            }
+            possibleStates.put(i, list);
+        }
+        return possibleStates;
     }
 
     private void l(Object obj) {
@@ -45,7 +83,6 @@ public class E3Agent implements AgentInterface {
 
     public Action agent_start(Observation state) {
         lastState = state;
-
 
         return lastAction;
     }
@@ -56,7 +93,9 @@ public class E3Agent implements AgentInterface {
         lastState = state;
         lastAction = e3.nextAction(state);
 
-        //l("State: " + Arrays.toString(lastState.intArray) + " Action: " + Arrays.toString(lastAction.intArray) + ", " + e3.policy + ", " + reward);
+        // l("State: " + Arrays.toString(lastState.intArray) + " Action: " +
+        // Arrays.toString(lastAction.intArray) + ", " + e3.policy + ", " +
+        // reward);
 
         return lastAction;
     }
@@ -75,8 +114,8 @@ public class E3Agent implements AgentInterface {
     }
 
     public static void main(String[] args) {
-        //AgentLoader loader = new AgentLoader(new E3Agent());
-        //loader.run();
+        // AgentLoader loader = new AgentLoader(new E3Agent());
+        // loader.run();
     }
 
 }

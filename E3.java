@@ -23,6 +23,8 @@ public class E3 {
     private Map<Observation, Map<Action, Integer>> stateActionVisits;
     private Map<Observation, Integer> stateVisits;
 
+    private PartialTransitionProbabilityLogger ptpl;
+    
     // State -> Reward
     private Map<Observation, Double> rewards;
 
@@ -50,12 +52,14 @@ public class E3 {
             double eps,
             double maxReward,
             List<Action> actions,
+            PartialTransitionProbabilityLogger ptpl,
             Observation dummyState) {
         tps = new TransitionProbabilities<>();
 
         stateActionStateVisits = new HashMap<>();
         stateActionVisits = new HashMap<>();
         stateVisits = new HashMap<>();
+        
 
         rewards = new HashMap<>();
 
@@ -66,6 +70,7 @@ public class E3 {
 
         this.discount = discount;
         this.eps = eps;
+        this.ptpl = ptpl;
         horizonTime = Math.round((1 / (1 - discount)));
         possibleActions = actions;
     }

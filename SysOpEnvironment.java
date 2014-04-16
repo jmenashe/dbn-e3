@@ -56,47 +56,7 @@ public class SysOpEnvironment implements EnvironmentInterface {
     public final double oddsStayUp = 0.95;
     public final double oddsComeUp = 0.05;
 
-    public String env_init() {
-
-        // Create a task spec programatically. This task spec encodes that
-        // state, action, and reward space for the problem.
-        // You could forgo the task spec if your agent and environment have been
-        // created specifically to work with each other
-        // ie, there is no need to share this information at run time. You could
-        // also use your own ad-hoc task specification language,
-        // or use the official one but just hard code the string instead of
-        // constructing it this way.
-        TaskSpecVRLGLUE3 theTaskSpecObject = new TaskSpecVRLGLUE3();
-        theTaskSpecObject.setContinuing();
-        theTaskSpecObject.setDiscountFactor(1.0d);
-        // Specify that there will be couple of boolean observations for the
-        // cpus.
-        // 1 = the corresponding cpu is running
-        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
-        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
-        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
-        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
-        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
-        // Specify that there will be an integer action [0,4]
-        theTaskSpecObject.addDiscreteAction(new IntRange(0, 4));
-        // Specify the reward range [-1,1]
-        theTaskSpecObject.setRewardRange(new DoubleRange(-1, 5));
-
-        String taskSpecString = theTaskSpecObject.toTaskSpec();
-        TaskSpec.checkTaskSpec(taskSpecString);
-
-        // This actual string this makes is:
-        // VERSION RL-Glue-3.0 PROBLEMTYPE episodic DISCOUNTFACTOR 1.0
-        // OBSERVATIONS INTS (1 0 20) ACTIONS INTS (1 0 1) REWARDS (1 -1.0 1.0)
-        // EXTRA
-
-        // This could be simplified a bit if you made it manually to
-        // VERSION RL-Glue-3.0 PROBLEMTYPE episodic DISCOUNTFACTOR 1.0
-        // OBSERVATIONS INTS (0 20) ACTIONS INTS (0 1) REWARDS (-1.0 1.0) EXTRA
-        return taskSpecString;
-    }
-
-    public Observation env_start() {
+    public SysOpEnvironment() {
 
         cpus = new ArrayList<>(5);
 
@@ -151,6 +111,50 @@ public class SysOpEnvironment implements EnvironmentInterface {
         for (SysOpCpu c : nextCpuList) {
             nextCpuMap.put(c.getId(), c);
         }
+
+    }
+
+    public String env_init() {
+
+        // Create a task spec programatically. This task spec encodes that
+        // state, action, and reward space for the problem.
+        // You could forgo the task spec if your agent and environment have been
+        // created specifically to work with each other
+        // ie, there is no need to share this information at run time. You could
+        // also use your own ad-hoc task specification language,
+        // or use the official one but just hard code the string instead of
+        // constructing it this way.
+        TaskSpecVRLGLUE3 theTaskSpecObject = new TaskSpecVRLGLUE3();
+        theTaskSpecObject.setContinuing();
+        theTaskSpecObject.setDiscountFactor(1.0d);
+        // Specify that there will be couple of boolean observations for the
+        // cpus.
+        // 1 = the corresponding cpu is running
+        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
+        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
+        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
+        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
+        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
+        // Specify that there will be an integer action [0,4]
+        theTaskSpecObject.addDiscreteAction(new IntRange(0, 4));
+        // Specify the reward range [-1,1]
+        theTaskSpecObject.setRewardRange(new DoubleRange(-1, 5));
+
+        String taskSpecString = theTaskSpecObject.toTaskSpec();
+        TaskSpec.checkTaskSpec(taskSpecString);
+
+        // This actual string this makes is:
+        // VERSION RL-Glue-3.0 PROBLEMTYPE episodic DISCOUNTFACTOR 1.0
+        // OBSERVATIONS INTS (1 0 20) ACTIONS INTS (1 0 1) REWARDS (1 -1.0 1.0)
+        // EXTRA
+
+        // This could be simplified a bit if you made it manually to
+        // VERSION RL-Glue-3.0 PROBLEMTYPE episodic DISCOUNTFACTOR 1.0
+        // OBSERVATIONS INTS (0 20) ACTIONS INTS (0 1) REWARDS (-1.0 1.0) EXTRA
+        return taskSpecString;
+    }
+
+    public Observation env_start() {
 
         Observation returnObservation = new Observation(5, 0, 0);
         for (int i = 0; i < 5; i++) {
@@ -212,17 +216,35 @@ public class SysOpEnvironment implements EnvironmentInterface {
             }
         }
 
-        return new Reward_observation_terminal(
-                reward, obs, episodeOver);
+        return new Reward_observation_terminal(reward, obs, episodeOver);
     }
 
     public void env_cleanup() {
     }
 
+    private String getConnectionsString() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < cpus.size(); i++) {
+            SysOpCpu cpu = cpuMap.get(i);
+            sb.append(cpu.getId()).append(" ");
+
+            for (SysOpCpu connectedCpu : cpu.getLinked()) {
+                sb.append(connectedCpu.getId()).append(" ");
+            }
+            //remove last space
+            sb.deleteCharAt(sb.length() - 1);
+            sb.append(":");
+        }
+        // remove last colon
+        sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
+    }
+
     public String env_message(String message) {
         if (message.equals("what is your name?"))
             return "my name is SysOp Environment, Java edition!";
-
+        if (message.equals("tell me your connections"))
+            return getConnectionsString();
         return "I don't know how to respond to your message";
     }
 
