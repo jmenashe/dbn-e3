@@ -1,11 +1,8 @@
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
-import org.rlcommunity.rlglue.codec.RLGlue;
-import org.rlcommunity.rlglue.codec.taskspec.TaskSpec;
-import org.rlcommunity.rlglue.codec.taskspec.ranges.IntRange;
 import org.rlcommunity.rlglue.codec.types.*;
 
 /**
@@ -17,7 +14,6 @@ public class E3 {
     private double eps;
     private long horizonTime;
     private double maxReward;
-    private final int partialStateKnownLimit = 10;
 
     // Transition probabilities in the MDP
     private TransitionProbabilities<Observation, Action> tps;
@@ -28,8 +24,6 @@ public class E3 {
     private Map<Observation, Map<Action, Integer>> stateActionVisits;
     private Map<Observation, Integer> stateVisits;
 
-    private PartialTransitionProbabilityLogger ptpl;
-    
     // State -> Reward
     private Map<Observation, Double> rewards;
 
@@ -37,7 +31,7 @@ public class E3 {
     private Map<Observation, Action> currentPolicy;
 
     // Current time we have expl*
-    private long currentTime;
+    private long currentTime = 0;
 
     // All possible actions
     private List<Action> possibleActions;
@@ -57,20 +51,12 @@ public class E3 {
             double eps,
             double maxReward,
             List<Action> actions,
-            TaskSpec taskspec,
             Observation dummyState) {
         tps = new TransitionProbabilities<>();
 
         stateActionStateVisits = new HashMap<>();
         stateActionVisits = new HashMap<>();
         stateVisits = new HashMap<>();
-        String responseMessage = RLGlue
-                .RL_env_message("tell me your connections");
-        Map<Integer, List<Integer>> connections = parseConnectionMessage(responseMessage);
-        Map<Integer, List<Integer>> possibleStates = parsePossibleStates(taskspec);
-        PartialTransitionProbabilityLogger ptpl = 
-                new PartialTransitionProbabilityLogger(
-                        connections, actions, possibleStates, partialStateKnownLimit);
 
         rewards = new HashMap<>();
 
@@ -81,42 +67,10 @@ public class E3 {
 
         this.discount = discount;
         this.eps = eps;
-        this.ptpl = ptpl;
         horizonTime = Math.round((1 / (1 - discount)));
         possibleActions = actions;
     }
 
-    private Map<Integer, List<Integer>> parsePossibleStates(TaskSpec taskspec) {
-        Map<Integer, List<Integer>> possibleStates = new HashMap<>();
-        int stateCount = taskspec.getNumDiscreteObsDims();
-
-        for (int i = 0; i < stateCount; i++) {
-            List<Integer> list = new ArrayList<>();
-            IntRange ir = taskspec.getDiscreteObservationRange(i);
-            for (int j = ir.getMin(); j < ir.getMax(); j++) {
-                list.add(j);
-            }
-            possibleStates.put(i, list);
-        }
-        return possibleStates;
-    }
-
-    
-    private Map<Integer, List<Integer>> parseConnectionMessage(
-            String responseMessage) {
-        Map<Integer, List<Integer>> returnMap = new HashMap<>();
-        String[] connections = responseMessage.split(":");
-        for (int i = 0; i < connections.length; i++) {
-            List<Integer> list = new ArrayList<Integer>();
-            for (String nr : connections[i].split("\\s+")) {
-                int a = Integer.parseInt(nr);
-                list.add(a);
-            }
-            returnMap.put(i, list);
-        }
-        return returnMap;
-    }
-    
     private void l(Object obj) {
         System.out.println(obj);
     }
@@ -129,14 +83,21 @@ public class E3 {
     /**
      * Find the next action.
      */
+    Random rand = new Random();
     public Action nextAction(Observation state) {
 
-        // Unknown state or expl* long enough: balanced wandering
-        if (!isKnown(state) || currentTime >= horizonTime) {
+        // Unknown state: balanced wandering
+        if (!isKnown(state)) {
             policy = "balancing";
             currentPolicy = null;
             currentTime = 0;
             return balancedWandering(state);
+        }
+        
+        //  expl* long enough
+        if (currentTime >= horizonTime) {
+            currentPolicy = null;
+            currentTime = 0;
         }
 
         // Start exploitation/exploration

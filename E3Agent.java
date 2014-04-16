@@ -4,6 +4,7 @@ import org.rlcommunity.rlglue.codec.taskspec.ranges.*;
 import org.rlcommunity.rlglue.codec.types.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +39,7 @@ public class E3Agent implements AgentInterface {
                 0.90, // epsilon
                 rewardRange.getMax(), // max reward
                 allActions, 
-                taskspec,
+                
                 new Observation(0, 0, 0));
     }
 
@@ -61,9 +62,12 @@ public class E3Agent implements AgentInterface {
         lastState = state;
         lastAction = e3.nextAction(state);
 
-        // l("State: " + Arrays.toString(lastState.intArray) + " Action: " +
-        // Arrays.toString(lastAction.intArray) + ", " + e3.policy + ", " +
-        // reward);
+         l("State: " + 
+         Arrays.toString(lastState.intArray) + 
+         " Action: " +
+         Arrays.toString(lastAction.intArray) + ", " + 
+         e3.policy + ", " +
+         reward);
 
         return lastAction;
     }
