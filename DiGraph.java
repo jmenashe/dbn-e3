@@ -1,6 +1,9 @@
 import java.util.regex.*;
 import java.util.*;
 
+/**
+ * Use DiGrap.graphFromString(STRINGSTRINGNGNGN) to create a digraph.
+ */
 public class DiGraph {
     private Map<Integer, Set<Integer>> edges;
 
