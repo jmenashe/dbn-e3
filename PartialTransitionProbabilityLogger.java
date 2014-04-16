@@ -6,7 +6,7 @@ import java.util.*;
 public class PartialTransitionProbabilityLogger {
 
     // From target state index to list of parent indices
-    private Map<Integer, List<Integer>> connections;
+    public Map<Integer, List<Integer>> connections;
     // From target state index to values of parents to count
     private Map<Integer, Map<PartialStateAction, Integer>> stateActionCounts;
     private Map<Integer, Map<PartialState, Integer>> stateCounts;
@@ -52,8 +52,8 @@ public class PartialTransitionProbabilityLogger {
 
     private void increaseStateActionStateCount(int stateIndex, int state,
             PartialStateAction psa) {
-        PartialStateWithIndex pswi = new PartialStateWithIndex(stateIndex,
-                state);
+        PartialStateWithIndex pswi = new PartialStateWithIndex(state,
+                stateIndex);
         Map<PartialState, Map<Action, Integer>> theMap = stateActionStateCounts
                 .get(pswi);
         if (theMap == null) {
