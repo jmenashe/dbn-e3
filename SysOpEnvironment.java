@@ -100,11 +100,11 @@ public class SysOpEnvironment implements EnvironmentInterface {
         centerNode2.addToLinked(leftNode2);
         centerNode2.addToLinked(rightNode2);
         centerNode2.addToLinked(bottomNode2);
-        nextCpuList.add(centerNode);
-        nextCpuList.add(leftNode);
-        nextCpuList.add(rightNode);
-        nextCpuList.add(topNode);
-        nextCpuList.add(bottomNode);
+        nextCpuList.add(centerNode2);
+        nextCpuList.add(leftNode2);
+        nextCpuList.add(rightNode2);
+        nextCpuList.add(topNode2);
+        nextCpuList.add(bottomNode2);
 
         nextCpuMap = new HashMap<>();
 
@@ -186,8 +186,8 @@ public class SysOpEnvironment implements EnvironmentInterface {
                 }
                 // All cpus that are down can affect neighboring cpus to come
                 // down
-                for (SysOpCpu connected : c.getLinked()) {
-                    SysOpCpu connectedOld = cpuMap.get(connected.getId());
+                for (SysOpCpu connectedOld : cOld.getLinked()) {
+                    //SysOpCpu connectedOld = cpuMap.get(connected.getId());
                     if (!connectedOld.isRunning()) {
                         probRunning *= oddsDownAffectsUp;
                     }
