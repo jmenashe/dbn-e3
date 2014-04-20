@@ -81,7 +81,7 @@ public class SkeletonExperiment {
 
         System.out.println("\n\n----------Running a few episodes----------");
         for (int i = 0; i < 1; i++)
-            runEpisode(40000);
+            runEpisode(20000);
 
         runEpisode(1);
         /* Remember that stepLimit of 0 means there is no limit at all! */

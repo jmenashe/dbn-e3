@@ -11,11 +11,12 @@ import java.util.Map;
 
 public class E3Agent implements AgentInterface {
 
-    private E3 e3;
-
+    private E3DBN e3;
+    
     private Observation lastState;
     private Action lastAction;
-
+    private int stepCount = 1;
+    
     public void agent_init(String taskSpecification) {
 
         TaskSpec taskspec = new TaskSpec(taskSpecification);
@@ -33,14 +34,19 @@ public class E3Agent implements AgentInterface {
 
         lastAction = allActions.get(0);
 
-
-        
-        e3 = new E3(0.95, // Discount
-                0.90, // epsilon
-                rewardRange.getMax(), // max reward
-                allActions, 
-                
-                new Observation(0, 0, 0));
+    	/*e3 = new E3(0.95, 
+			0.9, 
+			rewardRange.getMax(), 
+			allActions, 
+			new Observation(0,0,0));
+        */
+    	e3 = new E3DBN(0.95, // Discount
+            0.90, // epsilon
+            rewardRange.getMax(), // max reward
+            allActions, 
+            taskspec, 
+            new Observation(0, 0, 0));
+            
     }
 
 
@@ -55,25 +61,29 @@ public class E3Agent implements AgentInterface {
 
         return lastAction;
     }
-
+    
+        
     public Action agent_step(double reward, Observation state) {
-        e3.observe(lastState, lastAction, state, reward);
+    	e3.observe(lastState, lastAction, state, reward);
+		lastAction = e3.nextAction(state);
+		
+		lastState = state;
+		l(stepCount++ +") State: " + 
+		Arrays.toString(lastState.intArray) + 
+		" Action: " +
+		Arrays.toString(lastAction
+				.intArray) + ", " + 
+		e3.policy + ", " +
+		reward + ", "); //+ 
+		//e3.chanceToExplore + ", " +
+		//e3.balancingCount + ", " +
+		//e3.getKnownCount());
 
-        lastState = state;
-        lastAction = e3.nextAction(state);
-
-         l("State: " + 
-         Arrays.toString(lastState.intArray) + 
-         " Action: " +
-         Arrays.toString(lastAction.intArray) + ", " + 
-         e3.policy + ", " +
-         reward);
-
-        return lastAction;
+		
+		return lastAction;
     }
 
     public void agent_end(double reward) {
-
     }
 
     public void agent_cleanup() {
@@ -82,7 +92,7 @@ public class E3Agent implements AgentInterface {
     }
 
     public String agent_message(String message) {
-        return "E3 agent, win edition.";
+        return "E3(dbn) agent, win edition.";
     }
 
     public static void main(String[] args) {
