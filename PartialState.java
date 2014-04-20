@@ -5,18 +5,27 @@ import java.util.List;
 
 
 public final class PartialState {
-    private int[] state;
+    private List<Integer> parents;
+    private Observation state;
+    private Integer hashCode = null;
 
     public PartialState(Observation obs, List<Integer> parents) {
-        state = new int[parents.size()];
-        int j = 0;
-        for (int i : parents) {
-            state[j++] = obs.intArray[i];
-        }
+    	this.parents = parents;
+    	this.state = obs;
     }
 
+    
     public int hashCode() {
-        return Arrays.hashCode(state);
+    	if (hashCode != null) {
+    		return hashCode;
+    	}
+    	int code = 1;
+    	for (Integer i : parents) {
+    		code = code*17 + state.intArray[i];
+    		code = code*17 + i;
+    	}
+    	hashCode = code;
+        return code;
     }
 
     public boolean equals(Object other) {
@@ -24,14 +33,31 @@ public final class PartialState {
             return false;
         }
         PartialState otherPs = (PartialState) other;
-        return Arrays.equals(otherPs.state, state);
+        if (otherPs.state.intArray.length != this.state.intArray.length) {
+        	return false;
+        }
+        if (!this.parents.equals(otherPs.parents)) {
+        	return false;
+        }
+        
+        for(Integer i : parents) {
+        	if (this.state.intArray[i] != otherPs.state.intArray[i]) {
+        		return false;
+        	}
+        }
+        return true;
     }
 
     public int getState(int i) {
-        return state[i];
+        return state.intArray[parents.get(i)];
     }
 
     public String toString() {
-        return "Partial state: " + Arrays.toString(state);
+    	StringBuilder sb = new StringBuilder("PState [");
+    	for(int i : parents) {
+    		sb.append(i).append("-").append(state.intArray[i]).append(" ");
+    	}
+    	sb.append("]");
+        return sb.toString();
     }
 }
