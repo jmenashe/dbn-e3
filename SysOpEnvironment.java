@@ -33,8 +33,15 @@ import org.rlcommunity.rlglue.codec.types.Observation;
 import org.rlcommunity.rlglue.codec.types.Reward_observation_terminal;
 import org.rlcommunity.rlglue.codec.util.EnvironmentLoader;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -51,67 +58,51 @@ public class SysOpEnvironment implements EnvironmentInterface {
     private HashMap<Integer, SysOpCpu> nextCpuMap;
 
     private double runningReward = 1.0;
+    private int cpuCount;
 
     public final double oddsDownAffectsUp = 0.5;
     public final double oddsStayUp = 0.95;
     public final double oddsComeUp = 0.05;
 
+    private void parseNetTxt(Path filename) {
+    	List<String> lines;
+    	try {
+    		lines = Files.readAllLines(filename, StandardCharsets.UTF_8);
+    	}  catch(IOException e) {
+    		System.out.println(e.getMessage());
+    		System.out.println("Could not read file");
+    		return;
+    	}
+    	cpuCount = Integer.parseInt(lines.get(0));
+    	cpus = new ArrayList<>(cpuCount);
+    	cpuMap = new HashMap<>();
+    	nextCpuList = new ArrayList<>(cpuCount);
+    	nextCpuMap = new HashMap<>();
+    	for(int i = 0; i < cpuCount; i++) {
+    		SysOpCpu cpu = new SysOpCpu(i);
+    		SysOpCpu cpuCpy = new SysOpCpu(i);
+    		cpus.add(cpu);
+    		nextCpuList.add(cpuCpy);
+    		cpuMap.put(i,cpu);
+    		nextCpuMap.put(i,cpuCpy);
+    	}
+    	lines.remove(0);
+    	System.out.println(cpuMap);
+    	for(String line : lines) {
+    		String[] cpuIds = line.split("\\s+");
+    		int from = Integer.parseInt(cpuIds[0]);
+    		int to = Integer.parseInt(cpuIds[1]);
+    		cpuMap.get(from).addToLinked(cpuMap.get(to));
+    		cpuMap.get(to).addToLinked(cpuMap.get(from));
+    		nextCpuMap.get(from).addToLinked(nextCpuMap.get(to));
+    		nextCpuMap.get(to).addToLinked(nextCpuMap.get(from));
+    	}
+    	
+    }
+    
     public SysOpEnvironment() {
-
-        cpus = new ArrayList<>(5);
-
-        SysOpCpu centerNode = new SysOpCpu(true, null, 4);
-        SysOpCpu bottomNode = new SysOpCpu(true, null, 1);
-        bottomNode.addToLinked(centerNode);
-        SysOpCpu leftNode = new SysOpCpu(true, null, 2);
-        leftNode.addToLinked(centerNode);
-        SysOpCpu rightNode = new SysOpCpu(true, null, 3);
-        rightNode.addToLinked(centerNode);
-        SysOpCpu topNode = new SysOpCpu(true, null, 0);
-        topNode.addToLinked(centerNode);
-        centerNode.addToLinked(topNode);
-        centerNode.addToLinked(leftNode);
-        centerNode.addToLinked(rightNode);
-        centerNode.addToLinked(bottomNode);
-        cpus.add(centerNode);
-        cpus.add(leftNode);
-        cpus.add(rightNode);
-        cpus.add(topNode);
-        cpus.add(bottomNode);
-
-        cpuMap = new HashMap<>();
-
-        for (SysOpCpu c : cpus) {
-            cpuMap.put(c.getId(), c);
-        }
-
-        // for nextCpuList TODO: fix a method for copying the above
-        nextCpuList = new ArrayList<>();
-        SysOpCpu centerNode2 = new SysOpCpu(true, null, 4);
-        SysOpCpu bottomNode2 = new SysOpCpu(true, null, 1);
-        bottomNode2.addToLinked(centerNode2);
-        SysOpCpu leftNode2 = new SysOpCpu(true, null, 2);
-        leftNode2.addToLinked(centerNode2);
-        SysOpCpu rightNode2 = new SysOpCpu(true, null, 3);
-        rightNode2.addToLinked(centerNode2);
-        SysOpCpu topNode2 = new SysOpCpu(true, null, 0);
-        topNode2.addToLinked(centerNode2);
-        centerNode2.addToLinked(topNode2);
-        centerNode2.addToLinked(leftNode2);
-        centerNode2.addToLinked(rightNode2);
-        centerNode2.addToLinked(bottomNode2);
-        nextCpuList.add(centerNode2);
-        nextCpuList.add(leftNode2);
-        nextCpuList.add(rightNode2);
-        nextCpuList.add(topNode2);
-        nextCpuList.add(bottomNode2);
-
-        nextCpuMap = new HashMap<>();
-
-        for (SysOpCpu c : nextCpuList) {
-            nextCpuMap.put(c.getId(), c);
-        }
-
+    	Path path = Paths.get("net2.txt");
+    	parseNetTxt(path);
     }
 
     public String env_init() {
@@ -130,13 +121,11 @@ public class SysOpEnvironment implements EnvironmentInterface {
         // Specify that there will be couple of boolean observations for the
         // cpus.
         // 1 = the corresponding cpu is running
-        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
-        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
-        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
-        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
-        theTaskSpecObject.addDiscreteObservation(new IntRange(0, 1));
+        for(int i = 0; i < cpuCount; i++) {
+        	theTaskSpecObject.addDiscreteObservation(new IntRange(0,1));
+        }
         // Specify that there will be an integer action [0,4]
-        theTaskSpecObject.addDiscreteAction(new IntRange(0, 4));
+        theTaskSpecObject.addDiscreteAction(new IntRange(0, cpuCount-1));
         // Specify the reward range [-1,1]
         theTaskSpecObject.setRewardRange(new DoubleRange(-1, 5));
 
@@ -156,8 +145,8 @@ public class SysOpEnvironment implements EnvironmentInterface {
 
     public Observation env_start() {
 
-        Observation returnObservation = new Observation(5, 0, 0);
-        for (int i = 0; i < 5; i++) {
+        Observation returnObservation = new Observation(cpuCount, 0, 0);
+        for (int i = 0; i < cpuCount; i++) {
             returnObservation.intArray[i] = 1;
         }
 
