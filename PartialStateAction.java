@@ -35,11 +35,12 @@ public class PartialStateAction {
     }
 
     public boolean equals(Object other) {
-        if (!(other instanceof PartialStateAction)) {
-            return false;
-        }
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+
         PartialStateAction otherPsa = (PartialStateAction) other;
-        return otherPsa.action.equals(this.action) && otherPsa.ps.equals(this.ps);
+        return otherPsa.action.equals(this.action) &&
+                otherPsa.ps.equals(this.ps);
     }
 
 }
