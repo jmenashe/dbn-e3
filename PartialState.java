@@ -1,49 +1,52 @@
 import org.rlcommunity.rlglue.codec.types.Observation;
 
-import java.util.Arrays;
 import java.util.List;
 
 
 public final class PartialState {
     private List<Integer> parents;
     private Observation state;
-    private Integer hashCode = null;
+    private int hashCode = -1;
 
     public PartialState(Observation obs, List<Integer> parents) {
-    	this.parents = parents;
-    	this.state = obs;
+        this.parents = parents;
+        this.state = obs;
     }
 
-    
+    @Override
     public int hashCode() {
-    	if (hashCode != null) {
-    		return hashCode;
-    	}
-    	int code = 1;
-    	for (Integer i : parents) {
-    		code = code*17 + state.intArray[i];
-    		code = code*17 + i;
-    	}
-    	hashCode = code;
-        return code;
+        if (hashCode != -1) {
+            return hashCode;
+        }
+        hashCode = 1;
+        for (int i : parents) {
+            hashCode = hashCode * 17 + state.intArray[i];
+            hashCode = hashCode * 17 + i;
+        }
+        return hashCode;
     }
 
+    @Override
     public boolean equals(Object other) {
-        if (!(other instanceof PartialState)) {
+
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+
+        PartialState otherPs = (PartialState) other;
+
+        if (otherPs.state.intArray.length != this.state.intArray.length) {
             return false;
         }
-        PartialState otherPs = (PartialState) other;
-        if (otherPs.state.intArray.length != this.state.intArray.length) {
-        	return false;
-        }
+
+        //TODO will the parents appear in the same order in the list?
         if (!this.parents.equals(otherPs.parents)) {
-        	return false;
+            return false;
         }
-        
-        for(Integer i : parents) {
-        	if (this.state.intArray[i] != otherPs.state.intArray[i]) {
-        		return false;
-        	}
+
+        for (int i : parents) {
+            if (this.state.intArray[i] != otherPs.state.intArray[i]) {
+                return false;
+            }
         }
         return true;
     }
@@ -53,11 +56,11 @@ public final class PartialState {
     }
 
     public String toString() {
-    	StringBuilder sb = new StringBuilder("PState [");
-    	for(int i : parents) {
-    		sb.append(i).append("-").append(state.intArray[i]).append(" ");
-    	}
-    	sb.append("]");
+        StringBuilder sb = new StringBuilder("PState [");
+        for (int i : parents) {
+            sb.append(i).append("-").append(state.intArray[i]).append(" ");
+        }
+        sb.append("]");
         return sb.toString();
     }
 }
