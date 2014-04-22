@@ -2,27 +2,27 @@ import java.util.regex.*;
 import java.util.*;
 
 /**
- * Use DiGrap.graphFromString(STRINGSTRINGNGNGN) to create a digraph.
+ * Use DiGraph.graphFromString(STRINGSTRINGNGNGN) to create a digraph.
  */
 public class DiGraph {
-    private Map<Integer, Set<Integer>> edges;
+    private Map<Integer, List<Integer>> edges;
 
-    private DiGraph() {
+    public DiGraph() {
         edges = new HashMap<>();
     }
 
-    public Map<Integer, Set<Integer>> edges() {
+    public Map<Integer, List<Integer>> edges() {
         return edges;
     }
 
     /**
      * Insert a directed edge into graph
      */
-    private void addEdge(int from, int to) {
-        Set<Integer> tos = edges.get(from);
+    public void addEdge(int from, int to) {
+        List<Integer> tos = edges.get(from);
 
         if (tos == null) {
-            tos = new HashSet<>();
+            tos = new ArrayList<>();
             edges.put(from, tos);
         }
 
@@ -44,6 +44,10 @@ public class DiGraph {
             int from = Integer.parseInt(pairM.group("from"));
             int to = Integer.parseInt(pairM.group("to"));
             graph.addEdge(from, to);
+        }
+
+        for (int self : graph.edges.keySet()) {
+            graph.addEdge(self, self);
         }
 
         return graph;

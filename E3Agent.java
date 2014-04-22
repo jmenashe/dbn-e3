@@ -25,24 +25,15 @@ public class E3Agent implements AgentInterface {
         List<Action> allActions = createAllActionsList(taskspec);
 
         DoubleRange rewardRange = taskspec.getRewardRange();
-
-
-//    	e3 = new E3(0.95, 
-//			0.9, 
-//			rewardRange.getMax(), 
-//			allActions, 
-//			new Observation(0,0,0));
         
     	e3 = new E3DBN(0.95, // Discount
             0.90, // epsilon
             rewardRange.getMax(), // max reward
-            allActions, 
-            taskspec, 
+            allActions,
+            taskspec,
             new Observation(0, 0, 0));
             
     }
-
-
 
 
 	private List<Action> createAllActionsList(TaskSpec taskspec) {

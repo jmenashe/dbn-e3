@@ -43,6 +43,7 @@ public final class PartialState {
         }
 
         for (int i : parents) {
+
             if (this.state.intArray[i] != otherPs.state.intArray[i]) {
                 return false;
             }

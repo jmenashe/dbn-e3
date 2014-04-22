@@ -17,68 +17,18 @@ public class E3DBN {
 
 		@Override
 		public List<Action> getAllActions(Observation state) {
-			return possibleActions;
-		}
-		
-	}
-	
-	private class InvasiveAllActions implements AllActionsGetter {
+            List<Action> actions = new ArrayList<>();
+            for (List<Integer> actints : Utilities.getActions(state.intArray, 7, 4)) {
+                Action act = new Action(7, 0, 0);
 
-		private int reachSize;
-		public InvasiveAllActions(int reachSize) {
-			this.reachSize = reachSize;
-		}
-		
-		@Override
-		public List<Action> getAllActions(Observation state) {
-			List<Action> actionList = new LinkedList<Action>();
-			nextAction: for(Action action : possibleActions) {
-				
-				for(int reach = 0; reach < state.intArray.length / reachSize; reach++) {
-					int tamariskCount = 0, nativeCount = 0, emptyCount = 0;
-					for(int i = reach*reachSize; i < (reach+1)*reachSize; i++) {
-						switch(state.intArray[i]) {
-						case 1:
-							tamariskCount++;
-							break;
-						case 2: 
-							nativeCount++;
-							break;
-						case 3: 
-							emptyCount++;
-							break;
-						}
-					}
-					
-					switch (action.intArray[reach]) {
-					//No action
-					case 1:
-						//No action is always a-ok
-						break;
-					//Eradicate
-					case 2:
-						if (emptyCount == reachSize || nativeCount == reachSize) {
-							break nextAction;
-						}
-						break;
-					//Restore
-					case 3:
-						if (emptyCount == 0 || tamariskCount == reachSize) {
-							break nextAction;
-						}
-						break;
-					//Restore & eradicate
-					case 4:
-						if (emptyCount == 0 || tamariskCount == reachSize ||
-								nativeCount == reachSize) {
-							break nextAction;
-						}
-						break;
-					}
-				}
-				actionList.add(action);
-			}
-			return actionList;
+                for (int i = 0; i < 7; i++) {
+                    act.setInt(i, actints.get(i));
+                }
+
+                actions.add(act);
+            }
+
+			return actions;
 		}
 		
 	}
@@ -127,14 +77,27 @@ public class E3DBN {
             List<Action> actions,
             TaskSpec taskspec,
             Observation dummyState) {
+
         stateVisits = new HashMap<>();
-        String responseMessage = RLGlue
-                .RL_env_message("tell me your connections");
-        Map<Integer, List<Integer>> connections = parseConnectionsMessage(responseMessage);
+
+        String edges = taskspec.getExtraString();
+
+        DiGraph graph = DiGraph.graphFromString(edges);
+        System.out.println(edges);
+        System.out.println(graph.edges());
+
+        int habitats = taskspec.getNumDiscreteObsDims();
+
+        graph = new DiGraph();
+        for (int i = 0; i < habitats; i++) {
+            graph.addEdge(i, i);
+        }
+
         allActions = new AllActions();
         ptpl = new PartialTransitionProbabilityLogger(
-                        connections, actions, partialStateKnownLimit, 
+                        graph.edges(), actions, partialStateKnownLimit, 
                         allActions);
+
 
         rewards = new HashMap<>();
 
@@ -302,8 +265,14 @@ public class E3DBN {
 
         for (long t = 0; t < horizonTime; t++) {
             for (Observation state : vf.keySet()) {
-                double bestValue = 0;
+                double bestValue = Double.NEGATIVE_INFINITY;
                 Action bestAction = null;
+
+                if (state.equals(dummyState)) {
+                    vf.put(state, getReward(state) + discount * vf.get(state));
+
+                    continue;
+                }
 
                 for (Action action : allActions.getAllActions(state)) {
                     double currentValue = 0;
@@ -349,14 +318,18 @@ public class E3DBN {
         }
         vf.put(dummyState, 0.0);
         setReward(dummyState, 0.0);
-        //this following line is not needed, since the cache will always be cleared by 
-        //findExplorationPolicy(), which will always be run before this method!!!!
-        //ptpl.clearProbabilityCache();
 
         for (long t = 0; t < horizonTime; t++) {
             for (Observation state : vf.keySet()) {
-                double bestValue = 0;
+                double bestValue = Double.NEGATIVE_INFINITY;
                 Action bestAction = null;
+
+                if (state.equals(dummyState)) {
+                    vf.put(state, getReward(state) + discount * vf.get(state));
+
+                    continue;
+                }
+
                 for (Action action : allActions.getAllActions(state)) {
                     double currentValue = 0;
 
@@ -368,7 +341,7 @@ public class E3DBN {
                             currentValue += 
                             		ptpl.getProbability(state, action, o) * vf.get(o);
                         } else {
-                            
+                            // Do nothing if state is unknown
                         }
                     }
 
@@ -383,9 +356,6 @@ public class E3DBN {
             }
         }
 
-        if (policy.get(currentState) == null) {
-        	throw new ArithmeticException();
-        }
         return policy;
     }
 

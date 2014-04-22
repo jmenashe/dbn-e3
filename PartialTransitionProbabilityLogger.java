@@ -39,13 +39,17 @@ public class PartialTransitionProbabilityLogger {
     public PartialTransitionProbabilityLogger(
             Map<Integer, List<Integer>> connections, List<Action> actions,
             int knownLimit, AllActionsGetter allActionsGetter) {
+
         p = new HashMap<>();
+
         this.connections = connections;
         this.allActionsGetter = allActionsGetter;
+
         for (int i : connections.keySet()) {
             p.put(i,
                     new HashMap<PartialState, Map<Action, Map<Integer, Double>>>());
         }
+
         this.knownLimit = knownLimit;
         knownPartialStates = new HashMap<>();
 
@@ -153,9 +157,14 @@ public class PartialTransitionProbabilityLogger {
     public void record(Observation from, Action action, Observation to) {
         for (int stateIndex = 0; stateIndex < to.intArray.length; stateIndex++) {
             int state = to.intArray[stateIndex];
+
             PartialState ps = new PartialState(from,
                     connections.get(stateIndex));
-            Map<Action, Map<Integer, Double>> m = p.get(stateIndex).get(ps);
+
+            Map<Action, Map<Integer, Double>> m = p
+                    .get(stateIndex)
+                    .get(ps);
+
             if (m == null) {
                 m = new HashMap<>();
                 p.get(stateIndex).put(ps, m);
