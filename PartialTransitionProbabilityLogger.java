@@ -16,15 +16,17 @@ public class PartialTransitionProbabilityLogger {
     public Set<Observation> knownStates;
     private Set<Observation> observedStates;
     private AllActionsGetter allActionsGetter;
+    private Map<Observation, Map<Action, Map<Observation, Double>>> probCache = new HashMap<>();
+
 
     public int knownCount = 0;
-    
+
     public Set<Observation> getObservedStates() {
-		return observedStates;
-	}
-    
+        return observedStates;
+    }
+
     public Set<Observation> getKnownStates() {
-    	return knownStates;
+        return knownStates;
     }
 
     // map from target state index to
@@ -55,7 +57,7 @@ public class PartialTransitionProbabilityLogger {
     }
 
     private void increaseCounts(int stateIndex, int state,
-            PartialStateAction psa) {
+                                PartialStateAction psa) {
 
         increaseStateActionCount(stateIndex, psa);
         increaseStateCount(stateIndex, psa.getPs());
@@ -63,7 +65,7 @@ public class PartialTransitionProbabilityLogger {
     }
 
     private void increaseStateActionStateCount(int stateIndex, int state,
-            PartialStateAction psa) {
+                                               PartialStateAction psa) {
         PartialStateWithIndex pswi = new PartialStateWithIndex(state,
                 stateIndex);
         Map<PartialState, Map<Action, Integer>> theMap = stateActionStateCounts
@@ -200,7 +202,7 @@ public class PartialTransitionProbabilityLogger {
     }
 
     public double getProbability(int stateIndex, PartialState ps,
-            Action action, int state) {
+                                 Action action, int state) {
         Map<Action, Map<Integer, Double>> map = p.get(stateIndex).get(ps);
         if (map == null)
             return 0.0;
@@ -214,24 +216,24 @@ public class PartialTransitionProbabilityLogger {
 
     public boolean isKnown(Observation observedState) {
         if (knownStates.contains(observedState)) {
-        	return true;
+            return true;
         }
-    	for (int stateIndex = 0; stateIndex < connections.size(); stateIndex++) {
+        for (int stateIndex = 0; stateIndex < connections.size(); stateIndex++) {
 
             PartialState ps = new PartialState(observedState,
                     connections.get(stateIndex));
             for (Action a : allActionsGetter.getAllActions(observedState)) {
-                Map <PartialState,List<Action>> map = knownPartialStates.get(stateIndex);
-            	if (map == null) {
-            		return false;
-            	}
-            	List<Action> list = map.get(ps);
-            	if (list == null) {
-            		return false;
-            	}
-            	if (!list.contains(a)) {
-            		return false;
-            	}
+                Map<PartialState, List<Action>> map = knownPartialStates.get(stateIndex);
+                if (map == null) {
+                    return false;
+                }
+                List<Action> list = map.get(ps);
+                if (list == null) {
+                    return false;
+                }
+                if (!list.contains(a)) {
+                    return false;
+                }
             }
         }
         knownStates.add(observedState);
@@ -239,7 +241,7 @@ public class PartialTransitionProbabilityLogger {
     }
 
     public Map<Observation, Double> getTransitionProbs(Observation state,
-            Action action) {
+                                                       Action action) {
 
         return null;
     }
@@ -252,14 +254,14 @@ public class PartialTransitionProbabilityLogger {
         return null;
     }
 
-    private Map<Observation, Map<Action,List<Observation>>> nextStateCache = new HashMap<>();  
-    
+    private Map<Observation, Map<Action, List<Observation>>> nextStateCache = new HashMap<>();
+
     public List<Observation> statesFromPartialStates(Observation wholeState,
-            Action action) {
-    	if (nextStateCache.get(action) != null && nextStateCache.get(action).get(wholeState) != null) { 
-    		return nextStateCache.get(action).get(wholeState);
-    	}
-    		
+                                                     Action action) {
+        if (nextStateCache.get(action) != null && nextStateCache.get(action).get(wholeState) != null) {
+            return nextStateCache.get(action).get(wholeState);
+        }
+
         List<List<Integer>> seenStates = new ArrayList<>(wholeState.intArray.length);
         for (int stateIndex = 0; stateIndex < wholeState.intArray.length; stateIndex++) {
             Map<PartialState, Map<Action, Map<Integer, Double>>> map = p
@@ -270,7 +272,7 @@ public class PartialTransitionProbabilityLogger {
             Map<Action, Map<Integer, Double>> map2 = map.get(ps);
             seenStates.add(new ArrayList<Integer>(map2.get(action).keySet()));
         }
-        
+
         List<List<Integer>> list = nextStates(seenStates);
         List<Observation> returnList = new ArrayList<>(list.size());
         for (List<Integer> stateList : list) {
@@ -286,24 +288,24 @@ public class PartialTransitionProbabilityLogger {
     }
 
     private void addToCache(Action action, Observation wholeState,
-			List<Observation> returnList) {
-		Map<Action, List<Observation>> m1 = nextStateCache.get(wholeState);
-		if (m1 == null) {
-			m1 = new HashMap<>();
-			nextStateCache.put(wholeState, m1);
-		}
-		
-		m1.put(action, returnList);
-		
-	}
+                            List<Observation> returnList) {
+        Map<Action, List<Observation>> m1 = nextStateCache.get(wholeState);
+        if (m1 == null) {
+            m1 = new HashMap<>();
+            nextStateCache.put(wholeState, m1);
+        }
 
-	private Map<List<List<Integer>>,List<List<Integer>>> nsCache = new HashMap<>(); 
-    
-	public List<List<Integer>> nextStates(List<List<Integer>> input) {
-    	List<List<Integer>> returnList = nsCache.get(input);
-    	if (returnList != null) {
-    		return returnList;
-    	}
+        m1.put(action, returnList);
+
+    }
+
+    private Map<List<List<Integer>>, List<List<Integer>>> nsCache = new HashMap<>();
+
+    public List<List<Integer>> nextStates(List<List<Integer>> input) {
+        List<List<Integer>> returnList = nsCache.get(input);
+        if (returnList != null) {
+            return returnList;
+        }
         int max = 1;
         int[] sizes = new int[input.size()];
         int k = 0;
@@ -326,19 +328,18 @@ public class PartialTransitionProbabilityLogger {
     }
 
     public int getSmallestPartialStateActionVisitCount(Action action, Observation state) {
-	    int smallest = Integer.MAX_VALUE;
-	    for(int stateIndex = 0; stateIndex < state.intArray.length; stateIndex++) {
-	        PartialState ps = new PartialState(state, connections.get(stateIndex));
-	        
-	        try {
-	            smallest = Math.min(smallest, stateActionCounts.get(stateIndex).get(
-	                new PartialStateAction(ps, action)));
-	        } 
-	        catch (NullPointerException e) {
-	            return 0;
-	        }
-	    }
-	    return smallest;
+        int smallest = Integer.MAX_VALUE;
+        for (int stateIndex = 0; stateIndex < state.intArray.length; stateIndex++) {
+            PartialState ps = new PartialState(state, connections.get(stateIndex));
+
+            try {
+                smallest = Math.min(smallest, stateActionCounts.get(stateIndex).get(
+                        new PartialStateAction(ps, action)));
+            } catch (NullPointerException e) {
+                return 0;
+            }
+        }
+        return smallest;
     }
 
     /*
@@ -411,79 +412,77 @@ public class PartialTransitionProbabilityLogger {
 
 */
 
-    private Map<Observation,Map<Action,Map<Observation,Double>>> probCache = new HashMap<>();
-    
     public double getProbability(Observation currentState, Action action, Observation nextState) {
-        
-    	//Try the cache
-    	Map<Action,Map<Observation,Double>> m = probCache.get(currentState);
-        if(m != null) {
-        	Map<Observation,Double> m2 = m.get(action);
-        	if (m2 != null) {
-        		Double prob = m2.get(nextState);
-        		if (prob != null) {
-        			return prob;
-        		}
-        	}
+
+        //Try the cache
+        Map<Action, Map<Observation, Double>> m = probCache.get(currentState);
+        if (m != null) {
+            Map<Observation, Double> m2 = m.get(action);
+            if (m2 != null) {
+                Double prob = m2.get(nextState);
+                if (prob != null) {
+                    return prob;
+                }
+            }
         }
-        	
-    	
-    	double product = 1;
+
+
+        double product = 1;
         //Dummy state
         if (currentState.intArray.length == 0) {
-        	if (nextState.intArray.length == 0) {
-        		return 1.0;
-        	} else {
-        		return 0.0;
-        	}
+            if (nextState.intArray.length == 0) {
+                return 1.0;
+            } else {
+                return 0.0;
+            }
         }
 
         for (int i = 0; i < connections.size(); i++) {
             PartialState ps = new PartialState(currentState, connections.get(i));
             Double d = getPartialProbability(nextState, action, i, ps);
-            if (d == null) {return 0; };
+            if (d == null) {
+                return 0;
+            }
             product *= d;
-            
+
         }
-        addToCache(currentState,action,nextState,product);
+        addToCache(currentState, action, nextState, product);
         return product;
     }
 
     private void addToCache(Observation currentState, Action action,
-			Observation nextState, double product) {
-		Map<Action, Map<Observation, Double>> m = probCache.get(currentState);
-		if (m == null) {
-			m = new HashMap<>();
-			probCache.put(currentState, m);
-		}
-		Map<Observation, Double> m2 = m.get(action);
-		if(m2 == null) {
-			m2 = new HashMap<>();
-			m.put(action, m2);
-		}
-		m2.put(nextState, product);
-	}
-
-	public void clearProbabilityCache() {
-		probCache.clear();
-		nextStateCache.clear();
-	}
-
-	private double getPartialProbability(Observation nextState, Action action, int i, PartialState ps) {
-		Map<Action,Map<Integer,Double>> map = p.get(i).get(ps);
-		if (map == null) {
-			return 0.0;
-		}
-		Map<Integer,Double> map2 = map.get(action);
-		if(map2 == null) {
-			return 0.0;
-		}
-		Double d = map2.get(nextState.intArray[i]);
-		return d == null ? 0.0 : d;
-        
+                            Observation nextState, double product) {
+        Map<Action, Map<Observation, Double>> m = probCache.get(currentState);
+        if (m == null) {
+            m = new HashMap<>();
+            probCache.put(currentState, m);
+        }
+        Map<Observation, Double> m2 = m.get(action);
+        if (m2 == null) {
+            m2 = new HashMap<>();
+            m.put(action, m2);
+        }
+        m2.put(nextState, product);
     }
 
-	
+    public void clearProbabilityCache() {
+        probCache.clear();
+        nextStateCache.clear();
+    }
+
+    private double getPartialProbability(Observation nextState, Action action, int i, PartialState ps) {
+        Map<Action, Map<Integer, Double>> map = p.get(i).get(ps);
+        if (map == null) {
+            return 0.0;
+        }
+        Map<Integer, Double> map2 = map.get(action);
+        if (map2 == null) {
+            return 0.0;
+        }
+        Double d = map2.get(nextState.intArray[i]);
+        return d == null ? 0.0 : d;
+
+    }
 
 
 }
