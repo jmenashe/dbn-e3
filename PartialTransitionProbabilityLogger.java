@@ -9,10 +9,10 @@ public class PartialTransitionProbabilityLogger {
     private Map<Integer, List<Integer>> connections;
     // From target state index to values of parents to count
     private Map<Integer, Map<PartialStateAction, Integer>> stateActionCounts;
-    private Map<Integer, Map<PartialState, Integer>> stateCounts;
-    private Map<PartialStateWithIndex, Map<PartialState, Map<Action, Integer>>> stateActionStateCounts;
+    private Map<Integer, Map<ParentValues, Integer>> stateCounts;
+    private Map<PartialStateWithIndex, Map<ParentValues, Map<Action, Integer>>> stateActionStateCounts;
     // From target state index to set of known state/action combinations
-    public Map<Integer, Map<PartialState, List<Action>>> knownPartialStates;
+    public Map<Integer, Map<ParentValues, List<Action>>> knownPartialStates;
     public Set<Observation> knownStates;
     private Set<Observation> observedStates;
     private AllActionsGetter allActionsGetter;
@@ -33,7 +33,7 @@ public class PartialTransitionProbabilityLogger {
     // map from parents' state to
     // map from (what action) to
     // map from (target's state) to probability
-    private Map<Integer, Map<PartialState, Map<Action, Map<Integer, Double>>>> p;
+    private Map<Integer, Map<ParentValues, Map<Action, Map<Integer, Double>>>> p;
     private int knownLimit;
 
     public PartialTransitionProbabilityLogger(
@@ -47,7 +47,7 @@ public class PartialTransitionProbabilityLogger {
 
         for (int i : connections.keySet()) {
             p.put(i,
-                    new HashMap<PartialState, Map<Action, Map<Integer, Double>>>());
+                    new HashMap<ParentValues, Map<Action, Map<Integer, Double>>>());
         }
 
         this.knownLimit = knownLimit;
@@ -72,7 +72,7 @@ public class PartialTransitionProbabilityLogger {
                                                PartialStateAction psa) {
         PartialStateWithIndex pswi = new PartialStateWithIndex(state,
                 stateIndex);
-        Map<PartialState, Map<Action, Integer>> theMap = stateActionStateCounts
+        Map<ParentValues, Map<Action, Integer>> theMap = stateActionStateCounts
                 .get(pswi);
         if (theMap == null) {
             theMap = new HashMap<>();
@@ -94,9 +94,9 @@ public class PartialTransitionProbabilityLogger {
 
     }
 
-    private void increaseStateCount(int stateIndex, PartialState ps) {
+    private void increaseStateCount(int stateIndex, ParentValues ps) {
         Integer count;
-        Map<PartialState, Integer> map2 = stateCounts.get(stateIndex);
+        Map<ParentValues, Integer> map2 = stateCounts.get(stateIndex);
         if (map2 == null) {
             map2 = new HashMap<>();
             stateCounts.put(stateIndex, map2);
@@ -141,8 +141,8 @@ public class PartialTransitionProbabilityLogger {
         }
     }
 
-    public int getStateCount(int stateVar, PartialState ps) {
-        Map<PartialState, Integer> counts = stateCounts.get(stateVar);
+    public int getStateCount(int stateVar, ParentValues ps) {
+        Map<ParentValues, Integer> counts = stateCounts.get(stateVar);
         if (counts == null) {
             return 0;
         }
@@ -158,7 +158,7 @@ public class PartialTransitionProbabilityLogger {
         for (int stateIndex = 0; stateIndex < to.intArray.length; stateIndex++) {
             int state = to.intArray[stateIndex];
 
-            PartialState ps = new PartialState(from,
+            ParentValues ps = new ParentValues(from,
                     connections.get(stateIndex));
 
             Map<Action, Map<Integer, Double>> m = p
@@ -192,8 +192,8 @@ public class PartialTransitionProbabilityLogger {
         }
     }
 
-    private void addToKnown(int targetIndex, PartialState ps, Action action) {
-        Map<PartialState, List<Action>> psMap = knownPartialStates.get(targetIndex);
+    private void addToKnown(int targetIndex, ParentValues ps, Action action) {
+        Map<ParentValues, List<Action>> psMap = knownPartialStates.get(targetIndex);
         if (psMap == null) {
             psMap = new HashMap<>();
             knownPartialStates.put(targetIndex, psMap);
@@ -210,7 +210,7 @@ public class PartialTransitionProbabilityLogger {
         knownCount++;
     }
 
-    public double getProbability(int stateIndex, PartialState ps,
+    public double getProbability(int stateIndex, ParentValues ps,
                                  Action action, int state) {
         Map<Action, Map<Integer, Double>> map = p.get(stateIndex).get(ps);
         if (map == null)
@@ -229,10 +229,10 @@ public class PartialTransitionProbabilityLogger {
         }
         for (int stateIndex = 0; stateIndex < connections.size(); stateIndex++) {
 
-            PartialState ps = new PartialState(observedState,
+            ParentValues ps = new ParentValues(observedState,
                     connections.get(stateIndex));
             for (Action a : allActionsGetter.getAllActions(observedState)) {
-                Map<PartialState, List<Action>> map = knownPartialStates.get(stateIndex);
+                Map<ParentValues, List<Action>> map = knownPartialStates.get(stateIndex);
                 if (map == null) {
                     return false;
                 }
@@ -249,7 +249,7 @@ public class PartialTransitionProbabilityLogger {
         return true;
     }
 
-    public Map<Integer, Map<PartialState, List<Action>>> getKnown() {
+    public Map<Integer, Map<ParentValues, List<Action>>> getKnown() {
         return knownPartialStates;
     }
 
@@ -263,9 +263,9 @@ public class PartialTransitionProbabilityLogger {
 
         List<List<Integer>> seenStates = new ArrayList<>(wholeState.intArray.length);
         for (int stateIndex = 0; stateIndex < wholeState.intArray.length; stateIndex++) {
-            Map<PartialState, Map<Action, Map<Integer, Double>>> map = p
+            Map<ParentValues, Map<Action, Map<Integer, Double>>> map = p
                     .get(stateIndex);
-            PartialState ps = new PartialState(wholeState,
+            ParentValues ps = new ParentValues(wholeState,
                     connections.get(stateIndex));
 
             Map<Action, Map<Integer, Double>> map2 = map.get(ps);
@@ -329,7 +329,7 @@ public class PartialTransitionProbabilityLogger {
     public int getSmallestPartialStateActionVisitCount(Action action, Observation state) {
         int smallest = Integer.MAX_VALUE;
         for (int stateIndex = 0; stateIndex < state.intArray.length; stateIndex++) {
-            PartialState ps = new PartialState(state, connections.get(stateIndex));
+            ParentValues ps = new ParentValues(state, connections.get(stateIndex));
 
             try {
                 smallest = Math.min(smallest, stateActionCounts.get(stateIndex).get(
@@ -367,7 +367,7 @@ public class PartialTransitionProbabilityLogger {
         }
 
         for (int i = 0; i < connections.size(); i++) {
-            PartialState ps = new PartialState(currentState, connections.get(i));
+            ParentValues ps = new ParentValues(currentState, connections.get(i));
             Double d = getPartialProbability(nextState, action, i, ps);
             if (d == null) {
                 return 0;
@@ -399,7 +399,7 @@ public class PartialTransitionProbabilityLogger {
         nextStateCache.clear();
     }
 
-    private double getPartialProbability(Observation nextState, Action action, int i, PartialState ps) {
+    private double getPartialProbability(Observation nextState, Action action, int i, ParentValues ps) {
         Map<Action, Map<Integer, Double>> map = p.get(i).get(ps);
         if (map == null) {
             return 0.0;

@@ -3,12 +3,12 @@ import org.rlcommunity.rlglue.codec.types.Observation;
 import java.util.List;
 
 
-public final class PartialState {
+public final class ParentValues {
     private List<Integer> parents;
     private Observation state;
     private int hashCode = -1;
 
-    public PartialState(Observation obs, List<Integer> parents) {
+    public ParentValues(Observation obs, List<Integer> parents) {
         this.parents = parents;
         this.state = obs;
     }
@@ -32,7 +32,7 @@ public final class PartialState {
         if (this == other) return true;
         if (other == null || getClass() != other.getClass()) return false;
 
-        PartialState otherPs = (PartialState) other;
+        ParentValues otherPs = (ParentValues) other;
 
         if (otherPs.state.intArray.length != this.state.intArray.length) {
             return false;

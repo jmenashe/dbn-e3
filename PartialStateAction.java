@@ -3,18 +3,18 @@ import org.rlcommunity.rlglue.codec.types.Action;
 
 public class PartialStateAction {
     private Action action;
-    private PartialState ps;
+    private ParentValues ps;
 
-    public PartialStateAction(PartialState ps, Action action) {
+    public PartialStateAction(ParentValues ps, Action action) {
         this.ps = ps;
         this.action = action;
     }
 
-    public PartialState getPs() {
+    public ParentValues getPs() {
         return ps;
     }
 
-    public void setPs(PartialState ps) {
+    public void setPs(ParentValues ps) {
         this.ps = ps;
     }
 
