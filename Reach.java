@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Contains a representation of a reach. Nice!
  */
-public class Reach {
+public class Reach implements PartialState {
     private int empty;
     private int tamarisk;
     private int plant;
@@ -28,6 +28,7 @@ public class Reach {
         }
     }
 
+    @Override
     public List<Integer> possibleActions() {
         List<Integer> actions = new ArrayList<>();
 
@@ -82,13 +83,13 @@ public class Reach {
         return result;
     }
 
-    public static List<Reach> allReaches(Observation state, int nReaches, int habitatsPerReach) {
-        List<Reach> reaches = new ArrayList<>();
+    public static List<PartialState> allReaches(Observation state, int nReaches, int habitatsPerReach) {
+        List<PartialState> partialStates = new ArrayList<>();
 
         for (int reach = 0; reach < nReaches; reach++) {
-            reaches.add(new Reach(state, reach, habitatsPerReach));
+            partialStates.add(new Reach(state, reach, habitatsPerReach));
         }
 
-        return reaches;
+        return partialStates;
     }
 }
