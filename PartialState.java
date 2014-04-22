@@ -38,7 +38,6 @@ public final class PartialState {
             return false;
         }
 
-        //TODO will the parents appear in the same order in the list?
         if (!this.parents.equals(otherPs.parents)) {
             return false;
         }
