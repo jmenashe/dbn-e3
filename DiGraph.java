@@ -36,8 +36,8 @@ public class DiGraph {
      */
     public static DiGraph graphFromString(String edgeString) {
         DiGraph graph = new DiGraph();
-        Pattern pairP = Pattern.compile("\\((?<from>\\d+), ?(?<to>\\d+)\\)");
 
+        Pattern pairP = Pattern.compile("\\((?<from>\\d+), ?(?<to>\\d+)\\)");
         Matcher pairM = pairP.matcher(edgeString);
 
         while (pairM.find()) {
