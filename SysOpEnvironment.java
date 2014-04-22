@@ -87,7 +87,6 @@ public class SysOpEnvironment implements EnvironmentInterface {
     		nextCpuMap.put(i,cpuCpy);
     	}
     	lines.remove(0);
-    	System.out.println(cpuMap);
     	for(String line : lines) {
     		String[] cpuIds = line.split("\\s+");
     		int from = Integer.parseInt(cpuIds[0]);

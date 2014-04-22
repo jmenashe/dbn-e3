@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,67 @@ public class E3DBN {
 		@Override
 		public List<Action> getAllActions(Observation state) {
 			return possibleActions;
+		}
+		
+	}
+	
+	private class InvasiveAllActions implements AllActionsGetter {
+
+		private int reachSize;
+		public InvasiveAllActions(int reachSize) {
+			this.reachSize = reachSize;
+		}
+		
+		@Override
+		public List<Action> getAllActions(Observation state) {
+			List<Action> actionList = new LinkedList<Action>();
+			nextAction: for(Action action : possibleActions) {
+				
+				for(int reach = 0; reach < state.intArray.length / reachSize; reach++) {
+					int tamariskCount = 0, nativeCount = 0, emptyCount = 0;
+					for(int i = reach*reachSize; i < (reach+1)*reachSize; i++) {
+						switch(state.intArray[i]) {
+						case 1:
+							tamariskCount++;
+							break;
+						case 2: 
+							nativeCount++;
+							break;
+						case 3: 
+							emptyCount++;
+							break;
+						}
+					}
+					
+					switch (action.intArray[reach]) {
+					//No action
+					case 1:
+						//No action is always a-ok
+						break;
+					//Eradicate
+					case 2:
+						if (emptyCount == reachSize || nativeCount == reachSize) {
+							break nextAction;
+						}
+						break;
+					//Restore
+					case 3:
+						if (emptyCount == 0 || tamariskCount == reachSize) {
+							break nextAction;
+						}
+						break;
+					//Restore & eradicate
+					case 4:
+						if (emptyCount == 0 || tamariskCount == reachSize ||
+								nativeCount == reachSize) {
+							break nextAction;
+						}
+						break;
+					}
+				}
+				actionList.add(action);
+			}
+			return actionList;
 		}
 		
 	}

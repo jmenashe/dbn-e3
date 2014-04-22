@@ -2,6 +2,7 @@ import org.rlcommunity.rlglue.codec.*;
 import org.rlcommunity.rlglue.codec.taskspec.*;
 import org.rlcommunity.rlglue.codec.taskspec.ranges.*;
 import org.rlcommunity.rlglue.codec.types.*;
+import org.rlcommunity.rlglue.codec.util.AgentLoader;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,25 +22,17 @@ public class E3Agent implements AgentInterface {
 
         TaskSpec taskspec = new TaskSpec(taskSpecification);
 
-        IntRange actionRange = taskspec.getDiscreteActionRange(0);
+        List<Action> allActions = createAllActionsList(taskspec);
+
         DoubleRange rewardRange = taskspec.getRewardRange();
 
-        // Only consider one-dimensional actions
-        List<Action> allActions = new ArrayList<>();
-        for (int i = actionRange.getMin(); i <= actionRange.getMax(); i++) {
-            Action act = new Action(1, 0, 0);
-            act.setInt(0, i);
-            allActions.add(act);
-        }
 
-        lastAction = allActions.get(0);
-
-    	/*e3 = new E3(0.95, 
-			0.9, 
-			rewardRange.getMax(), 
-			allActions, 
-			new Observation(0,0,0));
-        */
+//    	e3 = new E3(0.95, 
+//			0.9, 
+//			rewardRange.getMax(), 
+//			allActions, 
+//			new Observation(0,0,0));
+        
     	e3 = new E3DBN(0.95, // Discount
             0.90, // epsilon
             rewardRange.getMax(), // max reward
@@ -52,6 +45,37 @@ public class E3Agent implements AgentInterface {
 
 
 
+	private List<Action> createAllActionsList(TaskSpec taskspec) {
+		int actionDims = taskspec.getNumDiscreteActionDims();
+        IntRange[] actionRanges = new IntRange[actionDims];
+        int actionCount = 1;
+        for(int i = 0; i < actionDims; i++) {
+        	actionRanges[i] = taskspec.getDiscreteActionRange(i);
+        	actionCount *= actionRanges[i].getMax() - actionRanges[i].getMin() + 1;
+        }
+        List<Action> allActions = new ArrayList<>(actionCount);
+        for(int i = 0; i < actionCount; i++) {
+        	Action action = new Action(actionDims, 0, 0);
+        	allActions.add(action);
+        }
+        
+        int n = actionCount;
+        int m;
+        for(int i = 0; i < actionRanges.length; i++) {
+        	int howMany = (actionRanges[i].getMax() - actionRanges[i].getMin() + 1);
+        	n = n / howMany;
+        	m = howMany;
+	        for(int action = 0; action < actionCount; action++) {
+	        	allActions.get(action).intArray[i] =
+	        			actionRanges[i].getMin() + (action / n) % m; 
+	        }
+        }
+		return allActions;
+	}
+
+
+
+
     private void l(Object obj) {
         System.out.println(obj);
     }
@@ -59,6 +83,7 @@ public class E3Agent implements AgentInterface {
     public Action agent_start(Observation state) {
         lastState = state;
 
+        lastAction = e3.nextAction(state);
         return lastAction;
     }
     
@@ -67,6 +92,8 @@ public class E3Agent implements AgentInterface {
     	e3.observe(lastState, lastAction, state, reward);
 		lastAction = e3.nextAction(state);
 		
+		if (stepCount == 1200)
+			throw new ArithmeticException();
 		lastState = state;
 		l(stepCount++ +") State: " + 
 		Arrays.toString(lastState.intArray) + 
@@ -96,8 +123,8 @@ public class E3Agent implements AgentInterface {
     }
 
     public static void main(String[] args) {
-        // AgentLoader loader = new AgentLoader(new E3Agent());
-        // loader.run();
+         AgentLoader loader = new AgentLoader(new E3Agent());
+         loader.run();
     }
 
 }
