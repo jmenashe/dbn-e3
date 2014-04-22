@@ -13,8 +13,11 @@ public class Reach {
 
     private int reachNumber;
 
+    private int habitats;
+
     public Reach(Observation state, int reachNumber, int habitatsPerReach) {
         this.reachNumber = reachNumber;
+        this.habitats = habitatsPerReach;
 
         for (int i = reachNumber * habitatsPerReach; i < (reachNumber + 1) * habitatsPerReach; i++) {
             switch (state.intArray[i]) {
@@ -23,6 +26,36 @@ public class Reach {
                 case 3: empty++; break;
             }
         }
+    }
+
+    public List<Integer> possibleActions() {
+        List<Integer> actions = new ArrayList<>();
+
+        actions.add(1);
+
+        if (plant == habitats) {
+            // only nothing action!
+        } else if (tamarisk == 0) {
+            actions.add(3);
+
+        } else if (tamarisk == habitats) {
+            actions.add(2);
+            actions.add(4);
+
+        } else if (empty == habitats) {
+            actions.add(3);
+
+        } else if (empty == 0) {
+            actions.add(2);
+            actions.add(4);
+
+        } else {
+            actions.add(2);
+            actions.add(3);
+            actions.add(4);
+        }
+
+        return actions;
     }
 
     @Override
