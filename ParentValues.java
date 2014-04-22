@@ -1,64 +1,48 @@
-import org.rlcommunity.rlglue.codec.types.Observation;
 
-import java.util.List;
+import java.util.*;
 
 
 public final class ParentValues {
-    private List<Integer> parents;
-    private Observation state;
-    private int hashCode = -1;
+    private List<PartialState> parents;
+  
 
-    public ParentValues(Observation obs, List<Integer> parents) {
-        this.parents = parents;
-        this.state = obs;
+    public ParentValues(List<PartialState> fullState, List<Integer> parentIndices) {
+    	parents = new ArrayList<PartialState>(parentIndices.size());
+        for(int parent : parentIndices) {
+        	parents.add(
+        			fullState.get(parent));
+        }
     }
 
     @Override
-    public int hashCode() {
-        if (hashCode != -1) {
-            return hashCode;
-        }
-        hashCode = 1;
-        for (int i : parents) {
-            hashCode = hashCode * 17 + state.intArray[i];
-            hashCode = hashCode * 17 + i;
-        }
-        return hashCode;
-    }
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((parents == null) ? 0 : parents.hashCode());
+		return result;
+	}
 
-    @Override
-    public boolean equals(Object other) {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ParentValues other = (ParentValues) obj;
+		if (parents == null) {
+			if (other.parents != null)
+				return false;
+		} else if (!parents.equals(other.parents))
+			return false;
+		return true;
+	}
 
-        if (this == other) return true;
-        if (other == null || getClass() != other.getClass()) return false;
-
-        ParentValues otherPs = (ParentValues) other;
-
-        if (otherPs.state.intArray.length != this.state.intArray.length) {
-            return false;
-        }
-
-        if (!this.parents.equals(otherPs.parents)) {
-            return false;
-        }
-
-        for (int i : parents) {
-
-            if (this.state.intArray[i] != otherPs.state.intArray[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public int getState(int i) {
-        return state.intArray[parents.get(i)];
-    }
-
-    public String toString() {
-        StringBuilder sb = new StringBuilder("PState [");
-        for (int i : parents) {
-            sb.append(i).append("-").append(state.intArray[i]).append(" ");
+	public String toString() {
+        StringBuilder sb = new StringBuilder("Parent values [" );
+        for (PartialState ps : parents) {
+            sb.append(ps).append(" ");
         }
         sb.append("]");
         return sb.toString();

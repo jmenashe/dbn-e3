@@ -1,7 +1,7 @@
+
 import org.rlcommunity.rlglue.codec.types.Observation;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Contains a representation of a reach. Nice!
@@ -92,4 +92,38 @@ public class Reach implements PartialState {
 
         return partialStates;
     }
+
+	@Override
+	public int[] toIntarray(List<PartialState> state) {
+		List<Integer> returnList = new LinkedList<Integer>();
+		for(PartialState pstate : state) {
+			for(int i = 1; i < 4; i++) {
+				for(int j = 0; j < pstate.getState(i); j++) {
+					returnList.add(i);
+				}
+			}
+		}
+		// java sucks some times
+		int[] returnArray = new int[returnList.size()];
+		for(int i = 0; i < returnList.size(); i++) {
+			returnArray[i] = returnList.get(i);
+		}
+		return returnArray;
+	}
+
+	@Override
+	public int getState(int i) {
+		switch(i) {
+		case 1: return tamarisk;
+		case 2: return plant;
+		case 3: return empty;
+		//TODO: HAHAHAHA!
+		default: throw new ArithmeticException();
+		}
+	}
+	
+	@Override
+	public String toString() {
+		return new StringBuilder("[").append(tamarisk).append(" ").append(plant).append(" ").append(empty).append("]").toString();
+	}
 }

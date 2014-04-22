@@ -1,10 +1,5 @@
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
-import org.rlcommunity.rlglue.codec.RLGlue;
 import org.rlcommunity.rlglue.codec.taskspec.TaskSpec;
 import org.rlcommunity.rlglue.codec.types.*;
 
@@ -16,9 +11,11 @@ public class E3DBN {
 	private class AllActions implements AllActionsGetter {
 
 		@Override
-		public List<Action> getAllActions(Observation state) {
+		public List<Action> getAllActions(List<PartialState> state) {
             List<Action> actions = new ArrayList<>();
-            for (List<Integer> actints : Utilities.getActions(state.intArray, 7, 4)) {
+            for (List<Integer> actints : Utilities.getActions(
+            		// TODO: less ugly possible?
+                    state.get(0).toIntarray(state), 7, 4)) {
                 Action act = new Action(7, 0, 0);
 
                 for (int i = 0; i < 7; i++) {
@@ -44,24 +41,22 @@ public class E3DBN {
     private double chanceToExplore ;
 
     // State, Action, State -> Visits
-    private Map<Observation, Integer> stateVisits;
+    private Map<List<PartialState>, Integer> stateVisits;
 
     public PartialTransitionProbabilityLogger ptpl;
     
     // State -> Reward
-    private Map<Observation, Double> rewards;
+    private Map<List<PartialState>, Double> rewards;
 
     // Current policy
-    private Map<Observation, Action> currentPolicy;
+    private Map<List<PartialState>, Action> currentPolicy;
 
     // Current time we have expl*
     private long currentTime;
 
-    // All possible actions
-    private List<Action> possibleActions;
 
     // This is the absorbing state which represents all unvisited states
-    private Observation dummyState;
+    private List<PartialState> dummyState;
 
     /**
      * @param discount discount factor
@@ -74,9 +69,8 @@ public class E3DBN {
             double discount,
             double eps,
             double maxReward,
-            List<Action> actions,
             TaskSpec taskspec,
-            Observation dummyState) {
+            List<PartialState> dummyState) {
 
         stateVisits = new HashMap<>();
 
@@ -84,18 +78,13 @@ public class E3DBN {
 
         DiGraph graph = DiGraph.graphFromString(edges);
         System.out.println(edges);
+        //TODO: Massive todo: why the heck does this refer to nonexistant reaches?
+        graph.edges().get(0).remove(0);
         System.out.println(graph.edges());
-
-        int habitats = taskspec.getNumDiscreteObsDims();
-
-        graph = new DiGraph();
-        for (int i = 0; i < habitats; i++) {
-            graph.addEdge(i, i);
-        }
 
         allActions = new AllActions();
         ptpl = new PartialTransitionProbabilityLogger(
-                        graph.edges(), actions, partialStateKnownLimit, 
+                        graph.edges(), partialStateKnownLimit, 
                         allActions);
 
 
@@ -108,9 +97,8 @@ public class E3DBN {
 
         this.discount = discount;
         horizonTime = Math.round((1 / (1 - discount)));
-        possibleActions = actions;
     }    
-    private Map<Integer, List<Integer>> parseConnectionsMessage(
+   /* private Map<Integer, List<Integer>> parseConnectionsMessage(
             String responseMessage) {
         Map<Integer, List<Integer>> returnMap = new HashMap<>();
         String[] connections = responseMessage.split(":");
@@ -123,7 +111,7 @@ public class E3DBN {
             returnMap.put(i, list);
         }
         return returnMap;
-    }
+    }*/
     
     @SuppressWarnings("unused")
 	private void l(Object obj) {
@@ -138,7 +126,7 @@ public class E3DBN {
     /**
      * Find the next action.
      */
-    public Action nextAction(Observation state) {
+    public Action nextAction(List<PartialState> state) {
 
         // Unknown state 
         if (!ptpl.isKnown(state)) {
@@ -175,7 +163,7 @@ public class E3DBN {
     /**
      * Find the balanced wandering action
      */
-    private Action balancedWandering(Observation state) {
+    private Action balancedWandering(List<PartialState> state) {
         Action balancingAction = null;
 
         int lowest = Integer.MAX_VALUE;
@@ -198,12 +186,12 @@ public class E3DBN {
     /**
      * Should we explore given some policy?
      */
-    private boolean shouldExplore(Map<Observation, Action> explorationPolicy, 
-            Observation currentState) {
-        Map<Observation, Double> probs = new HashMap<>();
+    private boolean shouldExplore(Map<List<PartialState>, Action> explorationPolicy, 
+            List<PartialState> currentState) {
+        Map<List<PartialState>, Double> probs = new HashMap<>();
       
         // Starting probabilities are 0 for known states and 1 for unknown
-        for (Observation state : ptpl.getObservedStates()) {
+        for (List<PartialState> state : ptpl.getObservedStates()) {
             if (ptpl.isKnown(state)) {
                 probs.put(state, 0.0);
             } else {
@@ -213,15 +201,15 @@ public class E3DBN {
 
         // Find probability that we end up in an unknown state in horizonTime steps
         for (long i = 0; i < horizonTime; i++) {
-            for (Observation state : ptpl.getObservedStates()) {
+            for (List<PartialState> state : ptpl.getObservedStates()) {
                 if (ptpl.isKnown(state)) {
                     double probability = 0;
 
                     // For all possible transitions, multiply transition
                     // probability by the stored value for the target state. 
-                    List<Observation> nextStates = 
+                    List<List<PartialState>> nextStates = 
                     		ptpl.statesFromPartialStates(state, explorationPolicy.get(state));
-                    for (Observation nextState : nextStates) {
+                    for (List<PartialState> nextState : nextStates) {
                     	Double d = probs.get(nextState);
                     	d = d == null ? 1 : d;
                     	probability += d * ptpl.getProbability(state, 
@@ -244,27 +232,28 @@ public class E3DBN {
     /**
      * Performs value iteration in to find a policy that explores new states within horizonTime
      */
-    private Map<Observation, Action> findExplorationPolicy(Observation currentState) {
+    private Map<List<PartialState>, Action> findExplorationPolicy(
+    		List<PartialState>currentState) {
 
         // Value function
-        Map<Observation, Double> vf = new HashMap<>();
+        Map<List<PartialState>, Double> vf = new HashMap<>();
 
         // Policy
-        Map<Observation, Action> policy = new HashMap<>();
+        Map<List<PartialState>, Action> policy = new HashMap<>();
 
         // Initialize value function
-        for (Observation state : ptpl.getObservedStates()) {
+        for (List<PartialState> state : ptpl.getObservedStates()) {
             if (ptpl.isKnown(state)) {
                 vf.put(state, 0.0);
             }
         }
-        ptpl.clearProbabilityCache();
+        //ptpl.clearProbabilityCache();
                 
         vf.put(dummyState, 0.0);
         setReward(dummyState, maxReward);
 
         for (long t = 0; t < horizonTime; t++) {
-            for (Observation state : vf.keySet()) {
+            for (List<PartialState> state : vf.keySet()) {
                 double bestValue = Double.NEGATIVE_INFINITY;
                 Action bestAction = null;
 
@@ -278,7 +267,7 @@ public class E3DBN {
                     double currentValue = 0;
                     //List<Observation> nextStates = 
                     //		ptpl.statesFromPartialStates(state, action);
-                    for (Observation o : ptpl.getObservedStates()) {
+                    for (List<PartialState> o : ptpl.getObservedStates()) {
                     	//(if known)
                         if (vf.keySet().contains(o) && !dummyState.equals(o)) {
                             currentValue += 
@@ -302,16 +291,16 @@ public class E3DBN {
         return policy;
     }
 
-    private Map<Observation, Action> findExploitationPolicy(Observation currentState) {
+    private Map<List<PartialState>, Action> findExploitationPolicy(List<PartialState> currentState) {
 
         // Value function
-        Map<Observation, Double> vf = new HashMap<>();
+        Map<List<PartialState>, Double> vf = new HashMap<>();
 
         // Policy
-        Map<Observation, Action> policy = new HashMap<>();
+        Map<List<PartialState>, Action> policy = new HashMap<>();
         
         // Initialize value function
-        for (Observation state : ptpl.getObservedStates()) {
+        for (List<PartialState> state : ptpl.getObservedStates()) {
             if (ptpl.isKnown(state)) {
                 vf.put(state, 0.0);
             }
@@ -320,7 +309,7 @@ public class E3DBN {
         setReward(dummyState, 0.0);
 
         for (long t = 0; t < horizonTime; t++) {
-            for (Observation state : vf.keySet()) {
+            for (List<PartialState> state : vf.keySet()) {
                 double bestValue = Double.NEGATIVE_INFINITY;
                 Action bestAction = null;
 
@@ -333,9 +322,9 @@ public class E3DBN {
                 for (Action action : allActions.getAllActions(state)) {
                     double currentValue = 0;
 
-                    List<Observation> nextStates = 
+                    List<List<PartialState>> nextStates = 
                     		ptpl.statesFromPartialStates(state, action);
-                    for (Observation o : nextStates) {
+                    for (List<PartialState> o : nextStates) {
                     	//(if known)
                     	if (vf.keySet().contains(o) && !dummyState.equals(o)) {
                             currentValue += 
@@ -367,9 +356,9 @@ public class E3DBN {
      * Observe a state transition.
      */
     public void observe(
-            Observation from, 
+            List<PartialState> from, 
             Action action,
-            Observation to,
+            List<PartialState> to,
             double reward
     ) {
 
@@ -385,7 +374,8 @@ public class E3DBN {
     /**
      * Update visits statistics
      */
-    private void updateVisits(Observation from, Action action, Observation to) {
+    private void updateVisits(List<PartialState> from, Action action, 
+    		List<PartialState> to) {
         // State visits
         stateVisits.put(from, stateVisits.containsKey(from) ? stateVisits.get(from) + 1 : 1);
 
@@ -395,7 +385,7 @@ public class E3DBN {
     /**
      * Update reward table.
      */
-    private void updateReward(Observation to, double reward) {
+    private void updateReward(List<PartialState> to, double reward) {
         int visits = getVisits(to);
 
         double oldReward = 0;
@@ -410,7 +400,7 @@ public class E3DBN {
     /**
      * Update reward table.
      */
-    private void setReward(Observation to, double reward) {
+    private void setReward(List<PartialState> to, double reward) {
         rewards.put(to, reward);
     }
 
@@ -418,11 +408,11 @@ public class E3DBN {
 
     // Get state, action, state visit statistics {{{
 
-    private int getVisits(Observation state) {
+    private int getVisits(List<PartialState> state) {
         return stateVisits.containsKey(state) ? stateVisits.get(state) : 0;
     }
 
-    private double getReward(Observation state) {
+    private double getReward(List<PartialState> state) {
         return rewards.get(state);
     }
 

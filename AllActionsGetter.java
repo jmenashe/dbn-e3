@@ -5,5 +5,5 @@ import org.rlcommunity.rlglue.codec.types.Observation;
 
 
 public interface AllActionsGetter {
-	List<Action> getAllActions(Observation state);
+	List<Action> getAllActions(List<PartialState> state);
 }

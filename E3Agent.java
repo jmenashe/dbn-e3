@@ -14,7 +14,7 @@ public class E3Agent implements AgentInterface {
 
     private E3DBN e3;
     
-    private Observation lastState;
+    private List<PartialState> lastState;
     private Action lastAction;
     private int stepCount = 1;
     
@@ -29,9 +29,8 @@ public class E3Agent implements AgentInterface {
     	e3 = new E3DBN(0.95, // Discount
             0.90, // epsilon
             rewardRange.getMax(), // max reward
-            allActions,
             taskspec,
-            new Observation(0, 0, 0));
+            new ArrayList<PartialState>());
             
     }
 
@@ -72,22 +71,23 @@ public class E3Agent implements AgentInterface {
     }
 
     public Action agent_start(Observation state) {
-        lastState = state;
+    	List<PartialState> stateList= Reach.allReaches(state, 7, 4);
+        lastAction = e3.nextAction(stateList);
+        
+        lastState = stateList;
 
-        lastAction = e3.nextAction(state);
         return lastAction;
     }
     
         
     public Action agent_step(double reward, Observation state) {
-    	e3.observe(lastState, lastAction, state, reward);
-		lastAction = e3.nextAction(state);
-		
-		if (stepCount == 1200)
-			throw new ArithmeticException();
-		lastState = state;
+        List<PartialState> stateList= Reach.allReaches(state, 7, 4);
+        lastAction = e3.nextAction(stateList);
+    	e3.observe(lastState, lastAction, stateList, reward);
+		lastAction = e3.nextAction(stateList);
+		lastState = stateList;
 		l(stepCount++ +") State: " + 
-		Arrays.toString(lastState.intArray) + 
+		lastState + 
 		" Action: " +
 		Arrays.toString(lastAction
 				.intArray) + ", " + 

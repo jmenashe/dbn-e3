@@ -4,5 +4,7 @@ import java.util.List;
  * 
  */
 public interface PartialState {
-    List<Integer> possibleActions();
+    public List<Integer> possibleActions();
+    public int[] toIntarray(List<PartialState> state);
+    public int getState(int i);
 }

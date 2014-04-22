@@ -3,19 +3,19 @@ import org.rlcommunity.rlglue.codec.types.Action;
 
 public class ParentValuesAction {
     private Action action;
-    private ParentValues ps;
+    private ParentValues pv;
 
-    public ParentValuesAction(ParentValues ps, Action action) {
-        this.ps = ps;
+    public ParentValuesAction(ParentValues pv, Action action) {
+        this.pv = pv;
         this.action = action;
     }
 
-    public ParentValues getPs() {
-        return ps;
+    public ParentValues getPv() {
+        return pv;
     }
 
-    public void setPs(ParentValues ps) {
-        this.ps = ps;
+    public void setPs(ParentValues pv) {
+        this.pv = pv;
     }
 
     public Action getAction() {
@@ -28,12 +28,12 @@ public class ParentValuesAction {
 
     @Override
     public String toString() {
-        return "Psa: " + ps.toString() + " " + action.toString();
+        return "Psa: " + pv.toString() + " " + action.toString();
     }
 
     @Override
     public int hashCode() {
-        return action.hashCode() * 17 + ps.hashCode();
+        return action.hashCode() * 17 + pv.hashCode();
     }
 
     @Override
@@ -43,7 +43,7 @@ public class ParentValuesAction {
 
         ParentValuesAction otherPsa = (ParentValuesAction) other;
         return otherPsa.action.equals(this.action) &&
-                otherPsa.ps.equals(this.ps);
+                otherPsa.pv.equals(this.pv);
     }
 
 }
