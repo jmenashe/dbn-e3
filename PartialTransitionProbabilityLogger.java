@@ -249,18 +249,8 @@ public class PartialTransitionProbabilityLogger {
         return true;
     }
 
-    public Map<Observation, Double> getTransitionProbs(Observation state,
-                                                       Action action) {
-
-        return null;
-    }
-
     public Map<Integer, Map<PartialState, List<Action>>> getKnown() {
         return knownPartialStates;
-    }
-
-    public Iterator<Observation> knownStateIterator() {
-        return null;
     }
 
     private Map<Observation, Map<Action, List<Observation>>> nextStateCache = new HashMap<>();
@@ -350,76 +340,6 @@ public class PartialTransitionProbabilityLogger {
         }
         return smallest;
     }
-
-    /*
-    public static void main(String[] args) {
-        ArrayList<Integer> apa = new ArrayList<>();
-        ArrayList<Integer> bepa = new ArrayList<>();
-        ArrayList<Integer> cepa = new ArrayList<>();
-
-        apa.add(0);
-        apa.add(1);
-
-        bepa.add(1);
-        bepa.add(2);
-
-        cepa.add(2);
-        cepa.add(0);
-
-        HashMap<Integer, List<Integer>> map = new HashMap<>();
-        map.put(0, apa);
-        map.put(1, bepa);
-        map.put(2, cepa);
-
-        ArrayList<Action> actions = new ArrayList<>();
-        for (int i = 0; i < 3; i++) {
-            Action a = new Action(1, 0);
-            a.intArray[0] = i;
-            actions.add(a);
-        }
-
-        Map<Integer, List<Integer>> possible = new HashMap<>();
-
-        List<Integer> possibleVals = new LinkedList<>();
-        possibleVals.add(0);
-        possibleVals.add(1);
-        possible.put(0, possibleVals);
-        possible.put(1, possibleVals);
-        possible.put(2, possibleVals);
-
-        PartialTransitionProbabilityLogger ptpl = new PartialTransitionProbabilityLogger(
-                map, actions, possible, 3);
-        // observation from
-        Observation from = new Observation(3, 0);
-        from.intArray[0] = 0;
-        from.intArray[1] = 1;
-        from.intArray[2] = 1;
-
-        // action
-        Action action = new Action(1, 0);
-        action.intArray[0] = 1;
-
-        // observation to
-        Observation to = new Observation(3, 0);
-        to.intArray[0] = 1;
-        to.intArray[1] = 1;
-        to.intArray[2] = 0;
-        ptpl.record(from, action, to);
-        to.intArray[0] = 0;
-        to.intArray[1] = 0;
-        to.intArray[2] = 1;
-        ptpl.record(from, action, to);
-        ptpl.record(from, action, to);
-        ptpl.record(from, action, to);
-
-        PartialState ps = new PartialState(from, map.get(0));
-        PartialStateAction psa = new PartialStateAction(ps, action);
-
-        System.out.println("ptpl: " + ptpl.getStateActionCount(0, psa));
-        System.out.println("probability: "
-                + ptpl.getProbability(0, ps, action, 0));
-
-*/
 
     public double getProbability(Observation currentState, Action action, Observation nextState) {
 
