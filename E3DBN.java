@@ -93,7 +93,7 @@ public class E3DBN {
      * @param discount discount factor
      * @param eps the epsilon parameter
      * @param maxReward the maximum possible reward
-     * @param actions list of all possible actions
+     * @param taskspec the taskspec
      * @param dummyState representation of the absorbing dummystate
      */
     public E3DBN(
