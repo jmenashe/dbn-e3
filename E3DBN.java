@@ -1,50 +1,54 @@
-import java.util.*;
-
 import org.rlcommunity.rlglue.codec.taskspec.TaskSpec;
-import org.rlcommunity.rlglue.codec.types.*;
+import org.rlcommunity.rlglue.codec.types.Action;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * An implementation of the E3 algorithm in a discounted factored MDP.
  */
 public class E3DBN {
-	
-	private class AllActions implements AllActionsGetter {
 
-		Map<List<List<Integer>>,List<List<Integer>>> cache = new HashMap<>();
-	    private List<List<Integer>> fullActions(List<List<Integer>> input) {
-	    	List<List<Integer>> returnList = cache.get(input);
-	        
-	    	if (returnList != null) {
-	    		return returnList;
-	    	}
-	        
-	        int max = 1;
-	        int[] sizes = new int[input.size()];
-	        int k = 0;
-	        for (List<Integer> l : input) {
-	            max *= l.size();
-	            sizes[k++] = l.size();
-	        }
-	        returnList = new ArrayList<>(max);
-	        for (int i = 0; i < max; i++) {
-	            int iCpy = i;
-	            List<Integer> subList = new ArrayList<>(input.size());
-	            for (int j = 0; j < input.size(); j++) {
-	                subList.add(input.get(j).get(iCpy % sizes[j]));
-	                iCpy = iCpy / sizes[j];
-	            }
-	            returnList.add(subList);
-	        }
-	        cache.put(input,  returnList);
-	        return returnList;
-	    }
-		
-		@Override
-		public List<Action> getAllActions(List<PartialState> state) {
+    private class AllActions implements AllActionsGetter {
+
+        Map<List<List<Integer>>, List<List<Integer>>> cache = new HashMap<>();
+
+        private List<List<Integer>> fullActions(List<List<Integer>> input) {
+            List<List<Integer>> returnList = cache.get(input);
+
+            if (returnList != null) {
+                return returnList;
+            }
+
+            int max = 1;
+            int[] sizes = new int[input.size()];
+            int k = 0;
+            for (List<Integer> l : input) {
+                max *= l.size();
+                sizes[k++] = l.size();
+            }
+            returnList = new ArrayList<>(max);
+            for (int i = 0; i < max; i++) {
+                int iCpy = i;
+                List<Integer> subList = new ArrayList<>(input.size());
+                for (int j = 0; j < input.size(); j++) {
+                    subList.add(input.get(j).get(iCpy % sizes[j]));
+                    iCpy = iCpy / sizes[j];
+                }
+                returnList.add(subList);
+            }
+            cache.put(input, returnList);
+            return returnList;
+        }
+
+        @Override
+        public List<Action> getAllActions(List<PartialState> state) {
             List<Action> actions = new ArrayList<>();
             List<List<Integer>> partialActions = new ArrayList<>(state.size());
-            for(PartialState partial : state) {
-            	partialActions.add(partial.possibleActions());
+            for (PartialState partial : state) {
+                partialActions.add(partial.possibleActions());
             }
             for (List<Integer> actints : fullActions(partialActions)) {
                 Action act = new Action(E3Agent.NBR_REACHES, 0, 0);
@@ -56,26 +60,26 @@ public class E3DBN {
                 actions.add(act);
             }
 
-			return actions;
-		}
-		
-	}
+            return actions;
+        }
 
-	private AllActions allActions;
+    }
+
+    private AllActions allActions;
     private double discount;
     private long horizonTime;
     private double maxReward;
     private final int partialStateKnownLimit = 10;
-    
+
     //mostly for debugging
     private int balancingCount = 0;
-    double chanceToExplore ;
+    double chanceToExplore;
 
     // State, Action, State -> Visits
     private Map<List<PartialState>, Integer> stateVisits;
 
     public PartialTransitionProbabilityLogger ptpl;
-    
+
     // State -> Reward
     private Map<List<PartialState>, Double> rewards;
 
@@ -88,6 +92,12 @@ public class E3DBN {
 
     // This is the absorbing state which represents all unvisited states
     private List<PartialState> dummyState;
+
+    public enum SimulatorState {
+        Frozen, UnFrozen
+    }
+
+    private SimulatorState simulatorState;
 
     /**
      * @param discount discount factor
@@ -109,18 +119,18 @@ public class E3DBN {
 
         DiGraph graph = DiGraph.graphFromString(edges);
         System.out.println(edges);
-        for(int i = 0; i < graph.edges().size(); i++) {
-        	if (graph.edges().get(i).contains(E3Agent.NBR_REACHES)) {
-        		//MOAAHAHAHAHAHAHAHAHA
-        		graph.edges().get(i).remove(graph.edges().get(i).indexOf(E3Agent.NBR_REACHES));
-        	}
+        for (int i = 0; i < graph.edges().size(); i++) {
+            if (graph.edges().get(i).contains(E3Agent.NBR_REACHES)) {
+                //MOAAHAHAHAHAHAHAHAHA
+                graph.edges().get(i).remove(graph.edges().get(i).indexOf(E3Agent.NBR_REACHES));
+            }
         }
         System.out.println(graph.edges());
 
         allActions = new AllActions();
         ptpl = new PartialTransitionProbabilityLogger(
-                        graph.edges(), partialStateKnownLimit, 
-                        allActions);
+                graph.edges(), partialStateKnownLimit,
+                allActions);
 
 
         rewards = new HashMap<>();
@@ -147,9 +157,9 @@ public class E3DBN {
         }
         return returnMap;
     }*/
-    
+
     @SuppressWarnings("unused")
-	private void l(Object obj) {
+    private void l(Object obj) {
         System.out.println(obj);
     }
 
@@ -162,37 +172,47 @@ public class E3DBN {
      * Find the next action.
      */
     public Action nextAction(List<PartialState> state) {
-
-        // Unknown state 
-        if (!ptpl.isKnown(state)) {
-            policy = "balancing";
-            currentPolicy = null;
-            currentTime = 0;
-            balancingCount++; 
-            return balancedWandering(state);
-        }
-        
-        // If expl* long enough: balanced wandering
-        if (currentTime >= horizonTime) {
-            currentPolicy = null;
-            currentTime = 0;
-        }
-
-        // Start exploitation/exploration (the second condition is there
-        // to deal with states becoming known while expl*ing.)
-        if (currentPolicy == null || currentPolicy.get(state) == null) {
-            currentPolicy = findExplorationPolicy(state);
-            policy = "exploration";
-
-            // Should we really explore?
-            if (!shouldExplore(currentPolicy, state)) {
-                currentPolicy = findExploitationPolicy(state);
-                policy = "exploitation";
+        if (simulatorState == SimulatorState.Frozen) {
+            if (ptpl.isKnown(state)) {
+                policy = "frozen policy";
+                return currentPolicy.get(state);
+            } else {
+                policy = "frozen balancing";
+                return balancedWandering(state);
             }
-        }
+        } else {
 
-        currentTime++;
-        return currentPolicy.get(state);
+            // Unknown state
+            if (!ptpl.isKnown(state)) {
+                policy = "balancing";
+                currentPolicy = null;
+                currentTime = 0;
+                balancingCount++;
+                return balancedWandering(state);
+            }
+
+            // If expl* long enough: balanced wandering
+            if (currentTime >= horizonTime) {
+                currentPolicy = null;
+                currentTime = 0;
+            }
+
+            // Start exploitation/exploration (the second condition is there
+            // to deal with states becoming known while expl*ing.)
+            if (currentPolicy == null || currentPolicy.get(state) == null) {
+                currentPolicy = findExplorationPolicy();
+                policy = "exploration";
+
+                // Should we really explore?
+                if (!shouldExplore(currentPolicy, state)) {
+                    currentPolicy = findExploitationPolicy();
+                    policy = "exploitation";
+                }
+            }
+
+            currentTime++;
+            return currentPolicy.get(state);
+        }
     }
 
     /**
@@ -203,13 +223,14 @@ public class E3DBN {
 
         int lowest = Integer.MAX_VALUE;
         for (Action action : allActions.getAllActions(state)) {
-            if (balancingAction == null) { 
-            	lowest = ptpl.getSmallestPartialStateActionVisitCount(action, state);
-            	balancingAction = action; continue; 
-            	}
+            if (balancingAction == null) {
+                lowest = ptpl.getSmallestPartialStateActionVisitCount(action, state);
+                balancingAction = action;
+                continue;
+            }
             int temp = ptpl.getSmallestPartialStateActionVisitCount(action, state);
             if (temp < lowest) {
-            	lowest = temp;
+                lowest = temp;
                 balancingAction = action;
             }
         }
@@ -221,10 +242,10 @@ public class E3DBN {
     /**
      * Should we explore given some policy?
      */
-    private boolean shouldExplore(Map<List<PartialState>, Action> explorationPolicy, 
-            List<PartialState> currentState) {
+    private boolean shouldExplore(Map<List<PartialState>, Action> explorationPolicy,
+                                  List<PartialState> currentState) {
         Map<List<PartialState>, Double> probs = new HashMap<>();
-      
+
         // Starting probabilities are 0 for known states and 1 for unknown
         for (List<PartialState> state : ptpl.getObservedStates()) {
             if (ptpl.isKnown(state)) {
@@ -242,13 +263,13 @@ public class E3DBN {
 
                     // For all possible transitions, multiply transition
                     // probability by the stored value for the target state. 
-                    List<List<PartialState>> nextStates = 
-                    		ptpl.statesFromPartialStates(state, explorationPolicy.get(state));
+                    List<List<PartialState>> nextStates =
+                            ptpl.statesFromPartialStates(state, explorationPolicy.get(state));
                     for (List<PartialState> nextState : nextStates) {
-                    	Double d = probs.get(nextState);
-                    	d = d == null ? 1 : d;
-                    	probability += d * ptpl.getProbability(state, 
-                    			explorationPolicy.get(state), nextState);
+                        Double d = probs.get(nextState);
+                        d = d == null ? 1 : d;
+                        probability += d * ptpl.getProbability(state,
+                                explorationPolicy.get(state), nextState);
                     }
                     probs.put(state, probability);
                 }
@@ -267,18 +288,18 @@ public class E3DBN {
     /**
      * Performs value iteration in to find a policy that explores new states within horizonTime
      */
-    private Map<List<PartialState>, Action> findExplorationPolicy(List<PartialState> currentState) {
-        return findPolicy(currentState, true);
+    private Map<List<PartialState>, Action> findExplorationPolicy() {
+        return findPolicy(true);
     }
 
     /**
      * Performs value iteration in to find a policy that exploits new states within horizonTime
      */
-    private Map<List<PartialState>, Action> findExploitationPolicy(List<PartialState> currentState) {
-        return findPolicy(currentState, false);
+    private Map<List<PartialState>, Action> findExploitationPolicy() {
+        return findPolicy(false);
     }
 
-    private Map<List<PartialState>, Action> findPolicy(List<PartialState> currentState, boolean explorationPolicy) {
+    private Map<List<PartialState>, Action> findPolicy(boolean explorationPolicy) {
         // Value function
         Map<List<PartialState>, Double> vf = new HashMap<>();
 
@@ -343,7 +364,7 @@ public class E3DBN {
      * Observe a state transition.
      */
     public void observe(
-            List<PartialState> from, 
+            List<PartialState> from,
             Action action,
             List<PartialState> to,
             double reward
@@ -354,15 +375,15 @@ public class E3DBN {
 
         // Update reward table
         updateReward(to, reward);
-        
+
         ptpl.record(from, action, to);
     }
 
     /**
      * Update visits statistics
      */
-    private void updateVisits(List<PartialState> from, Action action, 
-    		List<PartialState> to) {
+    private void updateVisits(List<PartialState> from, Action action,
+                              List<PartialState> to) {
         // State visits
         stateVisits.put(from, stateVisits.containsKey(from) ? stateVisits.get(from) + 1 : 1);
 
@@ -404,17 +425,30 @@ public class E3DBN {
     }
 
     public int getKnownCount() {
-    	return ptpl.knownCount;
+        return ptpl.knownCount;
     }
 
     public int getBalancingActionCount() {
-    	return balancingCount;
+        return balancingCount;
     }
 
     public double getChanceToExplore() {
-    	return chanceToExplore;
+        return chanceToExplore;
     }
-    
+
+    // }}}
+
+    // {{{ Simulator shiz
+
+    public void freezePolicy() {
+        this.simulatorState = SimulatorState.Frozen;
+        currentPolicy = findExploitationPolicy();
+    }
+
+    public void unFreezePolicy() {
+        this.simulatorState = SimulatorState.UnFrozen;
+    }
+
     // }}}
 
 }
