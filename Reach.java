@@ -1,7 +1,8 @@
-
 import org.rlcommunity.rlglue.codec.types.Observation;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Contains a representation of a reach. Nice!
@@ -21,9 +22,15 @@ public class Reach implements PartialState {
 
         for (int i = reachNumber * habitatsPerReach; i < (reachNumber + 1) * habitatsPerReach; i++) {
             switch (state.intArray[i]) {
-                case 1: tamarisk++; break;
-                case 2: plant++; break;
-                case 3: empty++; break;
+                case 1:
+                    tamarisk++;
+                    break;
+                case 2:
+                    plant++;
+                    break;
+                case 3:
+                    empty++;
+                    break;
             }
         }
     }
@@ -66,12 +73,11 @@ public class Reach implements PartialState {
 
         Reach reach = (Reach) o;
 
-        if (empty != reach.empty) return false;
-        if (plant != reach.plant) return false;
-        if (reachNumber != reach.reachNumber) return false;
-        if (tamarisk != reach.tamarisk) return false;
+        return empty == reach.empty &&
+                plant == reach.plant &&
+                reachNumber == reach.reachNumber &&
+                tamarisk == reach.tamarisk;
 
-        return true;
     }
 
     @Override
@@ -93,37 +99,40 @@ public class Reach implements PartialState {
         return partialStates;
     }
 
-	@Override
-	public int[] toIntarray(List<PartialState> state) {
-		List<Integer> returnList = new LinkedList<Integer>();
-		for(PartialState pstate : state) {
-			for(int i = 1; i < 4; i++) {
-				for(int j = 0; j < pstate.getState(i); j++) {
-					returnList.add(i);
-				}
-			}
-		}
-		// java sucks some times
-		int[] returnArray = new int[returnList.size()];
-		for(int i = 0; i < returnList.size(); i++) {
-			returnArray[i] = returnList.get(i);
-		}
-		return returnArray;
-	}
+    @Override
+    public int[] toIntarray(List<PartialState> state) {
+        List<Integer> returnList = new LinkedList<>();
+        for (PartialState partialState : state) {
+            for (int i = 1; i < 4; i++) {
+                for (int j = 0; j < partialState.getState(i); j++) {
+                    returnList.add(i);
+                }
+            }
+        }
+        // java sucks some times
+        int[] returnArray = new int[returnList.size()];
+        for (int i = 0; i < returnList.size(); i++) {
+            returnArray[i] = returnList.get(i);
+        }
+        return returnArray;
+    }
 
-	@Override
-	public int getState(int i) {
-		switch(i) {
-		case 1: return tamarisk;
-		case 2: return plant;
-		case 3: return empty;
-		//TODO: HAHAHAHA!
-		default: throw new ArithmeticException();
-		}
-	}
-	
-	@Override
-	public String toString() {
-		return new StringBuilder("[").append(tamarisk).append(" ").append(plant).append(" ").append(empty).append("]").toString();
-	}
+    @Override
+    public int getState(int i) {
+        switch (i) {
+            case 1:
+                return tamarisk;
+            case 2:
+                return plant;
+            case 3:
+                return empty;
+            default:
+                throw new IllegalArgumentException("Nonexistent index");
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "[" + tamarisk + " " + plant + " " + empty + "]";
+    }
 }
