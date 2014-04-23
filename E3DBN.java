@@ -4,7 +4,7 @@ import org.rlcommunity.rlglue.codec.taskspec.TaskSpec;
 import org.rlcommunity.rlglue.codec.types.*;
 
 /**
- * An implementation of the E3 algorithm in a discounted MDP.
+ * An implementation of the E3 algorithm in a discounted factored MDP.
  */
 public class E3DBN {
 	
