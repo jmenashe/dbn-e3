@@ -12,11 +12,15 @@ import java.util.Map;
 
 public class E3Agent implements AgentInterface {
 
+	public static final int NBR_REACHES = 3;
+    public static final int HABITATS_PER_REACHES = 2;
+
     private E3DBN e3;
     
     private List<PartialState> lastState;
     private Action lastAction;
     private int stepCount = 1;
+
     
     public void agent_init(String taskSpecification) {
 
@@ -71,7 +75,8 @@ public class E3Agent implements AgentInterface {
     }
 
     public Action agent_start(Observation state) {
-    	List<PartialState> stateList= Reach.allReaches(state, 7, 4);
+    	List<PartialState> stateList= Reach.allReaches(state, NBR_REACHES,
+    			HABITATS_PER_REACHES);
         lastAction = e3.nextAction(stateList);
         
         lastState = stateList;
@@ -81,7 +86,8 @@ public class E3Agent implements AgentInterface {
     
         
     public Action agent_step(double reward, Observation state) {
-        List<PartialState> stateList= Reach.allReaches(state, 7, 4);
+        List<PartialState> stateList= Reach.allReaches(state, NBR_REACHES, 
+        		HABITATS_PER_REACHES);
         lastAction = e3.nextAction(stateList);
     	e3.observe(lastState, lastAction, stateList, reward);
 		lastAction = e3.nextAction(stateList);
@@ -92,10 +98,10 @@ public class E3Agent implements AgentInterface {
 		Arrays.toString(lastAction
 				.intArray) + ", " + 
 		e3.policy + ", " +
-		reward + ", "); //+ 
-		//e3.chanceToExplore + ", " +
+		reward + ", " + 
+		e3.chanceToExplore + ", " +
 		//e3.balancingCount + ", " +
-		//e3.getKnownCount());
+		e3.getKnownCount());
 
 		
 		return lastAction;

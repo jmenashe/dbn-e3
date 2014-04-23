@@ -10,15 +10,46 @@ public class E3DBN {
 	
 	private class AllActions implements AllActionsGetter {
 
+		Map<List<List<Integer>>,List<List<Integer>>> cache = new HashMap<>();
+	    private List<List<Integer>> fullActions(List<List<Integer>> input) {
+	    	List<List<Integer>> returnList = cache.get(input);
+	        
+	    	if (returnList != null) {
+	    		return returnList;
+	    	}
+	        
+	        int max = 1;
+	        int[] sizes = new int[input.size()];
+	        int k = 0;
+	        for (List<Integer> l : input) {
+	            max *= l.size();
+	            sizes[k++] = l.size();
+	        }
+	        returnList = new ArrayList<>(max);
+	        for (int i = 0; i < max; i++) {
+	            int iCpy = i;
+	            List<Integer> subList = new ArrayList<>(input.size());
+	            for (int j = 0; j < input.size(); j++) {
+	                subList.add(input.get(j).get(iCpy % sizes[j]));
+	                iCpy = iCpy / sizes[j];
+	            }
+	            returnList.add(subList);
+	        }
+	        cache.put(input,  returnList);
+	        return returnList;
+	    }
+		
 		@Override
 		public List<Action> getAllActions(List<PartialState> state) {
             List<Action> actions = new ArrayList<>();
-            for (List<Integer> actints : Utilities.getActions(
-            		// TODO: less ugly possible?
-                    state.get(0).toIntarray(state), 7, 4)) {
-                Action act = new Action(7, 0, 0);
+            List<List<Integer>> partialActions = new ArrayList<>(state.size());
+            for(PartialState partial : state) {
+            	partialActions.add(partial.possibleActions());
+            }
+            for (List<Integer> actints : fullActions(partialActions)) {
+                Action act = new Action(E3Agent.NBR_REACHES, 0, 0);
 
-                for (int i = 0; i < 7; i++) {
+                for (int i = 0; i < E3Agent.NBR_REACHES; i++) {
                     act.setInt(i, actints.get(i));
                 }
 
@@ -38,7 +69,7 @@ public class E3DBN {
     
     //mostly for debugging
     private int balancingCount = 0;
-    private double chanceToExplore ;
+    double chanceToExplore ;
 
     // State, Action, State -> Visits
     private Map<List<PartialState>, Integer> stateVisits;
@@ -78,8 +109,12 @@ public class E3DBN {
 
         DiGraph graph = DiGraph.graphFromString(edges);
         System.out.println(edges);
-        //TODO: Massive todo: why the heck does this refer to nonexistant reaches?
-        graph.edges().get(0).remove(0);
+        for(int i = 0; i < graph.edges().size(); i++) {
+        	if (graph.edges().get(i).contains(E3Agent.NBR_REACHES)) {
+        		//MOAAHAHAHAHAHAHAHAHA
+        		graph.edges().get(i).remove(graph.edges().get(i).indexOf(E3Agent.NBR_REACHES));
+        	}
+        }
         System.out.println(graph.edges());
 
         allActions = new AllActions();

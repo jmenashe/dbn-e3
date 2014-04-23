@@ -45,7 +45,7 @@ public class PartialTransitionProbabilityLogger {
 
         for (int i : connections.keySet()) {
             p.put(i,
-                    new HashMap<ParentValues, Map<Action, Map<PartialState, Double>>>());
+                new HashMap<ParentValues, Map<Action, Map<PartialState, Double>>>());
         }
 
         this.knownLimit = knownLimit;
