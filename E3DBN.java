@@ -66,14 +66,16 @@ public class E3DBN {
     }
 
     private AllActions allActions;
+    private final double exploreThreshold = .05;
     private double discount;
     private long horizonTime;
     private double maxReward;
-    private final int partialStateKnownLimit = 10;
+    private final int partialStateKnownLimit = 5;
 
     //mostly for debugging
     private int balancingCount = 0;
     double chanceToExplore;
+    double chanceToExploreOnExploit;
 
     // State, Action, State -> Visits
     private Map<List<PartialState>, Integer> stateVisits;
@@ -97,7 +99,7 @@ public class E3DBN {
         Frozen, UnFrozen
     }
 
-    private SimulatorState simulatorState;
+    private SimulatorState simulatorState = SimulatorState.UnFrozen;
 
     /**
      * @param discount discount factor
@@ -177,7 +179,7 @@ public class E3DBN {
                 policy = "frozen policy";
                 return currentPolicy.get(state);
             } else {
-                policy = "frozen balancing";
+            	policy = "frozen balancing";
                 return balancedWandering(state);
             }
         } else {
@@ -203,11 +205,17 @@ public class E3DBN {
                 currentPolicy = findExplorationPolicy();
                 policy = "exploration";
 
+                Map<List<PartialState>,Action> exploitPolicy = findExploitationPolicy();
+                chanceToExploreOnExploit = chanceToExplore(exploitPolicy,state);
+               
+                chanceToExplore = chanceToExplore(currentPolicy, state);
                 // Should we really explore?
-                if (!shouldExplore(currentPolicy, state)) {
+                if (chanceToExplore < exploreThreshold) {
                     currentPolicy = findExploitationPolicy();
                     policy = "exploitation";
                 }
+                
+                
             }
 
             currentTime++;
@@ -220,7 +228,23 @@ public class E3DBN {
      */
     private Action balancedWandering(List<PartialState> state) {
         Action balancingAction = null;
-
+        Action action = new Action(state.size(), 0);
+        
+        for(int stateIndex = 0; stateIndex < state.size(); stateIndex++) {
+        	ParentValues pv = new ParentValues(state, ptpl.getConnections().get(stateIndex));
+        	int smallestCount = Integer.MAX_VALUE;
+        	int bestAction = 0;
+        	for(int partialAction : state.get(stateIndex).possibleActions()) {
+        		int newCount = ptpl.getParentSettingPartialActionCount(stateIndex, pv, partialAction);
+        		if (smallestCount > newCount ) {
+        			smallestCount = newCount;
+        			bestAction = partialAction;
+        		}
+        	}
+        	action.intArray[stateIndex] = bestAction;
+        }
+        return action;
+        /*
         int lowest = Integer.MAX_VALUE;
         for (Action action : allActions.getAllActions(state)) {
             if (balancingAction == null) {
@@ -235,14 +259,14 @@ public class E3DBN {
             }
         }
 
-        return balancingAction;
+        return balancingAction;*/
     }
 
 
     /**
      * Should we explore given some policy?
      */
-    private boolean shouldExplore(Map<List<PartialState>, Action> explorationPolicy,
+    private double chanceToExplore(Map<List<PartialState>, Action> explorationPolicy,
                                   List<PartialState> currentState) {
         Map<List<PartialState>, Double> probs = new HashMap<>();
 
@@ -276,9 +300,11 @@ public class E3DBN {
             }
         }
 
+        
         // TODO: 0.05 should be epsilon / (2 * G^T_max) (see paper, section 6)
         chanceToExplore = probs.get(currentState);
-        return probs.get(currentState) > 0.05;
+        
+        return probs.get(currentState);
     }
 
     // }}}
@@ -314,7 +340,7 @@ public class E3DBN {
         }
 
         vf.put(dummyState, 0.0);
-        setReward(dummyState, explorationPolicy ? maxReward : 0.0);
+        setReward(dummyState, explorationPolicy ? 0 : -100);
 
         for (long t = 0; t < horizonTime; t++) {
             for (List<PartialState> state : vf.keySet()) {
@@ -329,20 +355,22 @@ public class E3DBN {
 
                 for (Action action : allActions.getAllActions(state)) {
                     double currentValue = 0;
-
+                    double totalProb = 0;
                     for (List<PartialState> o : ptpl.getObservedStates()) {
-
-                        if (vf.keySet().contains(o) && !dummyState.equals(o)) {
+                    	totalProb += ptpl.getProbability(state, action, o);
+                        if (vf.keySet().contains(o)) {
                             currentValue +=
                                     ptpl.getProbability(state, action, o) * vf.get(o);
-                        } else if (explorationPolicy) {
+                        } else {
+                        	
                             currentValue +=
                                     ptpl.getProbability(state, action, o) * vf.get(dummyState);
-                        } else {
-                            // Do nothing if exploitation policy and state is unknown
                         }
                     }
 
+                    if (totalProb > 1.1 || totalProb < 0.9) {
+                    	System.out.println("hej");
+                    }
                     if (currentValue > bestValue) {
                         bestValue = currentValue;
                         bestAction = action;
@@ -369,7 +397,9 @@ public class E3DBN {
             List<PartialState> to,
             double reward
     ) {
-
+    	if (simulatorState == SimulatorState.Frozen) {
+    		return;
+    	}
         // Log the visit
         updateVisits(from, action, to);
 
@@ -441,11 +471,13 @@ public class E3DBN {
     // {{{ Simulator shiz
 
     public void freezePolicy() {
+    	System.out.println("Freezing");
         this.simulatorState = SimulatorState.Frozen;
         currentPolicy = findExploitationPolicy();
     }
 
     public void unFreezePolicy() {
+    	System.out.println("UnFreezing");
         this.simulatorState = SimulatorState.UnFrozen;
     }
 

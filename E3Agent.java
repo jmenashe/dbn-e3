@@ -29,8 +29,8 @@ public class E3Agent implements AgentInterface {
         List<Action> allActions = createAllActionsList(taskspec);
 
         DoubleRange rewardRange = taskspec.getRewardRange();
-
-        e3 = new E3DBN(0.95, // Discount
+        
+        e3 = new E3DBN(0.90, // Discount
                 0.90, // epsilon
                 rewardRange.getMax(), // max reward
                 taskspec,
@@ -90,6 +90,8 @@ public class E3Agent implements AgentInterface {
         e3.observe(lastState, lastAction, stateList, reward);
         lastAction = e3.nextAction(stateList);
         lastState = stateList;
+        if (e3.chanceToExploreOnExploit - e3.chanceToExplore > 0.05)
+        	System.out.println("aaaargh");
         l(stepCount++ + ") State: " +
                 lastState +
                 " Action: " +
@@ -98,6 +100,7 @@ public class E3Agent implements AgentInterface {
                 e3.policy + ", " +
                 reward + ", " +
                 e3.chanceToExplore + ", " +
+                e3.chanceToExploreOnExploit + ", " +
                 //e3.balancingCount + ", " +
                 e3.getKnownCount());
 
