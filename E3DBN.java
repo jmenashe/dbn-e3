@@ -232,81 +232,33 @@ public class E3DBN {
     /**
      * Performs value iteration in to find a policy that explores new states within horizonTime
      */
-    private Map<List<PartialState>, Action> findExplorationPolicy(
-    		List<PartialState>currentState) {
-
-        // Value function
-        Map<List<PartialState>, Double> vf = new HashMap<>();
-
-        // Policy
-        Map<List<PartialState>, Action> policy = new HashMap<>();
-
-        // Initialize value function
-        for (List<PartialState> state : ptpl.getObservedStates()) {
-            if (ptpl.isKnown(state)) {
-                vf.put(state, 0.0);
-            }
-        }
-        //ptpl.clearProbabilityCache();
-                
-        vf.put(dummyState, 0.0);
-        setReward(dummyState, maxReward);
-
-        for (long t = 0; t < horizonTime; t++) {
-            for (List<PartialState> state : vf.keySet()) {
-                double bestValue = Double.NEGATIVE_INFINITY;
-                Action bestAction = null;
-
-                if (state.equals(dummyState)) {
-                    vf.put(state, getReward(state) + discount * vf.get(state));
-
-                    continue;
-                }
-
-                for (Action action : allActions.getAllActions(state)) {
-                    double currentValue = 0;
-                    //List<Observation> nextStates = 
-                    //		ptpl.statesFromPartialStates(state, action);
-                    for (List<PartialState> o : ptpl.getObservedStates()) {
-                    	//(if known)
-                        if (vf.keySet().contains(o) && !dummyState.equals(o)) {
-                            currentValue += 
-                            		ptpl.getProbability(state, action, o) * vf.get(o);
-                        } else {
-                            currentValue += 
-                            		ptpl.getProbability(state, action, o) * vf.get(dummyState);
-                        }
-                    }
-                    
-                    if (currentValue > bestValue) {
-                        bestValue = currentValue;
-                        bestAction = action;
-                    }
-                }
-
-                vf.put(state, getReward(state) + discount * bestValue);
-                policy.put(state, bestAction);
-            }
-        }
-        return policy;
+    private Map<List<PartialState>, Action> findExplorationPolicy(List<PartialState> currentState) {
+        return findPolicy(currentState, true);
     }
 
+    /**
+     * Performs value iteration in to find a policy that exploits new states within horizonTime
+     */
     private Map<List<PartialState>, Action> findExploitationPolicy(List<PartialState> currentState) {
+        return findPolicy(currentState, false);
+    }
 
+    private Map<List<PartialState>, Action> findPolicy(List<PartialState> currentState, boolean explorationPolicy) {
         // Value function
         Map<List<PartialState>, Double> vf = new HashMap<>();
 
         // Policy
         Map<List<PartialState>, Action> policy = new HashMap<>();
-        
+
         // Initialize value function
         for (List<PartialState> state : ptpl.getObservedStates()) {
             if (ptpl.isKnown(state)) {
                 vf.put(state, 0.0);
             }
         }
+
         vf.put(dummyState, 0.0);
-        setReward(dummyState, 0.0);
+        setReward(dummyState, explorationPolicy ? maxReward : 0.0);
 
         for (long t = 0; t < horizonTime; t++) {
             for (List<PartialState> state : vf.keySet()) {
@@ -322,15 +274,16 @@ public class E3DBN {
                 for (Action action : allActions.getAllActions(state)) {
                     double currentValue = 0;
 
-                    List<List<PartialState>> nextStates = 
-                    		ptpl.statesFromPartialStates(state, action);
-                    for (List<PartialState> o : nextStates) {
-                    	//(if known)
-                    	if (vf.keySet().contains(o) && !dummyState.equals(o)) {
-                            currentValue += 
-                            		ptpl.getProbability(state, action, o) * vf.get(o);
+                    for (List<PartialState> o : ptpl.getObservedStates()) {
+
+                        if (vf.keySet().contains(o) && !dummyState.equals(o)) {
+                            currentValue +=
+                                    ptpl.getProbability(state, action, o) * vf.get(o);
+                        } else if (explorationPolicy) {
+                            currentValue +=
+                                    ptpl.getProbability(state, action, o) * vf.get(dummyState);
                         } else {
-                            // Do nothing if state is unknown
+                            // Do nothing if exploitation policy and state is unknown
                         }
                     }
 
@@ -344,7 +297,6 @@ public class E3DBN {
                 policy.put(state, bestAction);
             }
         }
-
         return policy;
     }
 
