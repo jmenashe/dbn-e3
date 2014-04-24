@@ -32,9 +32,10 @@ public class PartialTransitionProbabilityLogger {
 
     // map from target state index to
     // map from parents' state to
-    // map from (what action) to
-    // map from (target's state) to probability
-    private Map<Integer, Map<ParentValues, Map<Action, Map<PartialState, Double>>>> p;
+    // map from partial action to
+    // map from partial target state
+    // to probability
+    private Map<Integer, Map<ParentValues, Map<Integer, Map<PartialState, Double>>>> p;
     private int knownLimit;
 
     public PartialTransitionProbabilityLogger(
@@ -48,7 +49,7 @@ public class PartialTransitionProbabilityLogger {
 
         for (int i : connections.keySet()) {
             p.put(i,
-                new HashMap<ParentValues, Map<Action, Map<PartialState, Double>>>());
+                new HashMap<>());
         }
 
         this.knownLimit = knownLimit;
@@ -186,7 +187,7 @@ public class PartialTransitionProbabilityLogger {
             ParentValues pv = new ParentValues(from,
                     connections.get(stateIndex));
             
-            Map<Action, Map<PartialState, Double>> m = p
+            Map<Integer, Map<PartialState, Double>> m = p
                     .get(stateIndex)
                     .get(pv);
 
@@ -194,10 +195,10 @@ public class PartialTransitionProbabilityLogger {
                 m = new HashMap<>();
                 p.get(stateIndex).put(pv, m);
             }
-            Map<PartialState, Double> m2 = m.get(action);
+            Map<PartialState, Double> m2 = m.get(action.getInt(stateIndex));
             if (m2 == null) {
                 m2 = new HashMap<>();
-                m.put(action, m2);
+                m.put(action.getInt(stateIndex), m2);
             }
             ParentValuesAction psa = new ParentValuesAction(pv, action);
 
@@ -238,10 +239,10 @@ public class PartialTransitionProbabilityLogger {
 
     public double getProbability(int stateIndex, ParentValues ps,
                                  Action action, PartialState state) {
-        Map<Action, Map<PartialState, Double>> map = p.get(stateIndex).get(ps);
+        Map<Integer, Map<PartialState, Double>> map = p.get(stateIndex).get(ps);
         if (map == null)
             return 0.0;
-        Map<PartialState, Double> map2 = map.get(action);
+        Map<PartialState, Double> map2 = map.get(action.getInt(stateIndex));
         if (map2 == null)
             return 0.0;
         Double prob = map2.get(state);
@@ -284,25 +285,16 @@ public class PartialTransitionProbabilityLogger {
 
         List<List<PartialState>> seenStates = new ArrayList<>(wholeState.size());
         for (int stateIndex = 0; stateIndex < wholeState.size(); stateIndex++) {
-            Map<ParentValues, Map<Action, Map<PartialState, Double>>> map = p
+            Map<ParentValues, Map<Integer, Map<PartialState, Double>>> map = p
                     .get(stateIndex);
             ParentValues ps = new ParentValues(wholeState,
                     connections.get(stateIndex));
 
-            Map<Action, Map<PartialState, Double>> map2 = map.get(ps);
-            seenStates.add(new ArrayList<>(map2.get(action).keySet()));
+            Map<Integer, Map<PartialState, Double>> map2 = map.get(ps);
+            seenStates.add(new ArrayList<>(map2.get(action.getInt(stateIndex)).keySet()));
         }
 
         return nextStates(seenStates);
-
-        /*List<Observation> returnList = new ArrayList<>(list.size());
-        for (List<PartialState> stateList : list) {
-            Observation state = new Observation(stateList.size(), 0);
-            for (int i = 0; i < stateList.size(); i++) {
-                state.setInt(i, stateList.get(i));
-            }
-            returnList.add(state);
-        }*/
 
     }
 
@@ -372,17 +364,17 @@ public class PartialTransitionProbabilityLogger {
     }
 
 
-    private double getPartialProbability(List<PartialState> nextState, 
-    		Action action, int i, ParentValues ps) {
-        Map<Action, Map<PartialState, Double>> map = p.get(i).get(ps);
+    private double getPartialProbability(List<PartialState> nextState,
+    		Action action, int stateIndex, ParentValues ps) {
+        Map<Integer, Map<PartialState, Double>> map = p.get(stateIndex).get(ps);
         if (map == null) {
             return 0.0;
         }
-        Map<PartialState, Double> map2 = map.get(action);
+        Map<PartialState, Double> map2 = map.get(action.getInt(stateIndex));
         if (map2 == null) {
             return 0.0;
         }
-        Double d = map2.get(nextState.get(i));
+        Double d = map2.get(nextState.get(stateIndex));
         return d == null ? 0.0 : d;
 
     }
