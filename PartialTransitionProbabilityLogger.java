@@ -14,7 +14,7 @@ public class PartialTransitionProbabilityLogger {
    // private Map<Integer, Map<ParentValues, Integer>> stateCounts;
 //    private Map<PartialState, Map<ParentValues, Map<Action, Integer>>> stateActionStateCounts;
     // From target state index to set of known state/action combinations
-    public Map<Integer, Map<ParentValues, List<Action>>> knownPartialStates;
+    public Map<Integer, Map<ParentValues, List<Integer>>> knownPartialStates;
     public Set<List<PartialState>> knownStates;
     private Set<List<PartialState>> observedStates;
     private AllActionsGetter allActionsGetter;
@@ -220,20 +220,20 @@ public class PartialTransitionProbabilityLogger {
 
     
     private void addToKnown(int targetIndex, ParentValues ps, Action action) {
-        Map<ParentValues, List<Action>> psMap = knownPartialStates.get(targetIndex);
+        Map<ParentValues, List<Integer>> psMap = knownPartialStates.get(targetIndex);
         if (psMap == null) {
             psMap = new HashMap<>();
             knownPartialStates.put(targetIndex, psMap);
         }
 
-        List<Action> actionList = psMap.get(ps);
+        List<Integer> actionList = psMap.get(ps);
 
         if (actionList == null) {
             actionList = new LinkedList<>();
             psMap.put(ps, actionList);
         }
 
-        actionList.add(action);
+        actionList.add(action.intArray[targetIndex]);
         knownCount++;
     }
 
@@ -259,15 +259,15 @@ public class PartialTransitionProbabilityLogger {
             ParentValues ps = new ParentValues(observedState,
                     connections.get(stateIndex));
             for (Action a : allActionsGetter.getAllActions(observedState)) {
-                Map<ParentValues, List<Action>> map = knownPartialStates.get(stateIndex);
+                Map<ParentValues, List<Integer>> map = knownPartialStates.get(stateIndex);
                 if (map == null) {
                     return false;
                 }
-                List<Action> list = map.get(ps);
+                List<Integer> list = map.get(ps);
                 if (list == null) {
                     return false;
                 }
-                if (!list.contains(a)) {
+                if (!list.contains(a.intArray[stateIndex])) {
                     return false;
                 }
             }
@@ -276,7 +276,7 @@ public class PartialTransitionProbabilityLogger {
         return true;
     }
 
-    public Map<Integer, Map<ParentValues, List<Action>>> getKnown() {
+    public Map<Integer, Map<ParentValues, List<Integer>>> getKnown() {
         return knownPartialStates;
     }
 

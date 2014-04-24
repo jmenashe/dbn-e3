@@ -400,9 +400,9 @@ public class E3DBN {
                         }
                     }
 
-                    if (totalProb > 1.1 || totalProb < 0.9) {
-                    	//System.out.println("hej");
-                    	//throw new ArithmeticException();
+                    if ((totalProb > 1.1 || totalProb < 0.9) && totalProb != 0) {
+                    	System.out.println("hej "+ totalProb);
+                    	throw new ArithmeticException();
                     	
                     }
                     if (currentValue > bestValue) {
@@ -510,8 +510,8 @@ public class E3DBN {
 
     public void freezePolicy() {
     	System.out.println("Freezing");
-        this.simulatorState = SimulatorState.Frozen;
-        currentPolicy = findExploitationPolicy();
+        //this.simulatorState = SimulatorState.Frozen;
+        //currentPolicy = findExploitationPolicy();
     }
 
     public void unFreezePolicy() {
