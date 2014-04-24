@@ -131,8 +131,10 @@ class InvasiveEnvironment(Environment):
 
     def env_step(self, action):
         action = action.intArray
+
         assert len(action) == self.simulationParameterObj.nbrReaches, "Expected " + str(
             self.simulationParameterObj.nbrReaches) + " integer action."
+
         if not InvasiveUtility.is_action_allowable(action, self.state):
             theObs = Observation()
             InvasiveUtility.is_action_allowable(action, self.state)
@@ -142,12 +144,16 @@ class InvasiveEnvironment(Environment):
             returnRO.r = self.Bad_Action_Penalty
             returnRO.o = theObs
             return returnRO
+
         cost_state_unit = InvasiveUtility.get_unit_invaded_reaches(self.state,
             self.simulationParameterObj.habitatSize) * self.actionParameterObj.costPerReach
         stateCost = cost_state_unit + InvasiveUtility.get_invaded_reaches(
             self.state) * self.actionParameterObj.costPerTree
+
         stateCost = stateCost + InvasiveUtility.get_empty_slots(self.state) * self.actionParameterObj.emptyCost
+
         costAction = InvasiveUtility.get_budget_cost_actions(action, self.state, self.actionParameterObj)
+
         if costAction > self.actionParameterObj.budget:
             theObs = Observation()
             InvasiveUtility.is_action_allowable(action, self.state)
