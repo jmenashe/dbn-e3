@@ -12,8 +12,8 @@ import java.util.List;
 
 public class E3Agent implements AgentInterface {
 
-    public static final int NBR_REACHES = 4;
-    public static final int HABITATS_PER_REACHES = 3;
+    public static final int NBR_REACHES = 3;
+    public static final int HABITATS_PER_REACHES = 2;
 
     private E3DBN e3;
 
@@ -33,7 +33,7 @@ public class E3Agent implements AgentInterface {
 
         //DoubleRange rewardRange = taskspec.getRewardRange();
         
-        e3 = new E3DBN(0.90, // Discount
+        e3 = new E3DBN(0.80, // Discount
                 0.90, // epsilon
                 getMaxReward(), // max reward
                 taskspec,
