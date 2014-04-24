@@ -180,11 +180,6 @@ public class PartialTransitionProbabilityLogger {
     }*/
 
     public void record(List<PartialState> from, Action action, List<PartialState> to) {
-    	for (int i = 0; i < action.intArray.length; i++) {
-    		ParentValues setting = new ParentValues(from, connections.get(i));
-    		parentSettingPartialActionCounts.get(setting);
-    	}
-    	
         for (int stateIndex = 0; stateIndex < to.size(); stateIndex++) {
             PartialState state = to.get(stateIndex);
 
