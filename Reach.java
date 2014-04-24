@@ -8,6 +8,15 @@ import java.util.List;
  * Contains a representation of a reach. Nice!
  */
 public class Reach implements PartialState {
+
+    /*
+     * State Actions
+     */
+    public static final int ACTION_DO_NOTHING = 1;
+    public static final int ACTION_ERADICATE = 2;
+    public static final int ACTION_RESTORE = 3;
+    public static final int ACTION_ERADICATE_AND_RESTORE = 4;
+
     private int empty;
     private int tamarisk;
     private int plant;
@@ -47,16 +56,16 @@ public class Reach implements PartialState {
         cost += 0.05 * empty;
 
         switch (action) {
-            case 2: // Eradicate
+            case ACTION_ERADICATE: // Eradicate
                 cost += tamarisk * 0.4 + 0.5;
-                break;
-            case 3: // Restore
+                return cost;
+            case ACTION_RESTORE: // Restore
                 cost += empty * 0.4 + 0.9;
-                break;
-            case 4: // Eradicate + Restore
+                return cost;
+            case ACTION_ERADICATE_AND_RESTORE: // Eradicate + Restore
                 cost += tamarisk * 0.4 + 0.5;
                 cost += empty * 0.4 + 0.9;
-                break;
+                return cost;
         }
 
         return cost;
@@ -66,28 +75,28 @@ public class Reach implements PartialState {
     public List<Integer> possibleActions() {
         List<Integer> actions = new ArrayList<>();
 
-        actions.add(1);
+        actions.add(ACTION_DO_NOTHING);
 
         if (plant == habitats) {
             // only nothing action!
         } else if (tamarisk == 0) {
-            actions.add(3);
+            actions.add(ACTION_RESTORE);
 
         } else if (tamarisk == habitats) {
-            actions.add(2);
-            actions.add(4);
+            actions.add(ACTION_ERADICATE);
+            actions.add(ACTION_ERADICATE_AND_RESTORE);
 
         } else if (empty == habitats) {
-            actions.add(3);
+            actions.add(ACTION_RESTORE);
 
         } else if (empty == 0) {
-            actions.add(2);
-            actions.add(4);
+            actions.add(ACTION_ERADICATE);
+            actions.add(ACTION_ERADICATE_AND_RESTORE);
 
         } else {
-            actions.add(2);
-            actions.add(3);
-            actions.add(4);
+            actions.add(ACTION_ERADICATE);
+            actions.add(ACTION_RESTORE);
+            actions.add(ACTION_ERADICATE_AND_RESTORE);
         }
 
         return actions;
