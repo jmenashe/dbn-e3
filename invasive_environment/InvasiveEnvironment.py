@@ -223,4 +223,4 @@ if __name__ == "__main__":
             fixedStartState = False,
             nbrReaches = REACHES,
             habitatSize = HABITATS,
-            seed=1))
+            seed = 1))
