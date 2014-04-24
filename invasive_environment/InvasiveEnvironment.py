@@ -216,5 +216,11 @@ class InvasiveEnvironment(Environment):
 if __name__ == "__main__":
 
     EnvironmentLoader.loadEnvironment(
-        InvasiveEnvironment(simulationParameterObj=None, actionParameterObj=None, Bad_Action_Penalty=-10000,fixedStartState=False, nbrReaches=REACHES,
-            habitatSize=HABITATS, seed=1))
+        InvasiveEnvironment(
+            simulationParameterObj = None,
+            actionParameterObj = None,
+            Bad_Action_Penalty = -10000,
+            fixedStartState = False,
+            nbrReaches = REACHES,
+            habitatSize = HABITATS,
+            seed=1))
