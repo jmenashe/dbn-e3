@@ -36,6 +36,33 @@ public class Reach implements PartialState {
     }
 
     @Override
+    public double getCost(int action) {
+        double cost = 0;
+
+        if (tamarisk != 0) {
+            cost += 10;
+        }
+
+        cost += 0.1 * plant;
+        cost += 0.05 * empty;
+
+        switch (action) {
+            case 2: // Eradicate
+                cost += tamarisk * 0.4 + 0.5;
+                break;
+            case 3: // Restore
+                cost += empty * 0.4 + 0.9;
+                break;
+            case 4: // Eradicate + Restore
+                cost += tamarisk * 0.4 + 0.5;
+                cost += empty * 0.4 + 0.9;
+                break;
+        }
+
+        return cost;
+    }
+
+    @Override
     public List<Integer> possibleActions() {
         List<Integer> actions = new ArrayList<>();
 
