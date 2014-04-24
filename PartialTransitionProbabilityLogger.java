@@ -214,8 +214,8 @@ public class PartialTransitionProbabilityLogger {
                 }
             }
             increaseCounts(stateIndex, psa);
-            observedStates.add(to);
         }
+        observedStates.add(to);
     }
 
     
@@ -381,5 +381,16 @@ public class PartialTransitionProbabilityLogger {
     public  Map<Integer, List<Integer>>  getConnections() {
     	return connections;
     }
+
+	public int getUnknownPartialCount(List<PartialState> state) {
+		int count = 0;
+		
+		for(int i = 0; i < state.size(); i++) {
+			//knownPartialStates.get(i).get(new ParentValues(state, connections.get(i))).get();
+		}
+		
+		return count;
+		
+	}
 
 }
