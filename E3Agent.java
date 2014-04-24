@@ -99,7 +99,6 @@ public class E3Agent implements AgentInterface {
                 e3.policy + ", " +
                 reward + ", " +
                 e3.chanceToExplore + ", " +
-                e3.chanceToExploreOnExploit + ", " +
                 //e3.balancingCount + ", " +
                 e3.getKnownPartialsCount() + ", " + 
                 e3.getKnownFullCount());
@@ -107,8 +106,6 @@ public class E3Agent implements AgentInterface {
         e3.observe(lastState, lastAction, stateList, reward);
         lastAction = e3.nextAction(stateList);
         lastState = stateList;
-        if (e3.chanceToExploreOnExploit - e3.chanceToExplore > 0.05)
-        	System.out.println("aaaargh");
 
 
         return lastAction;

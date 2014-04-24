@@ -325,8 +325,19 @@ public class PartialTransitionProbabilityLogger {
 		return smallest;
 	}
 
+	Map<List<PartialState>,Map<Action,Map<List<PartialState>,Double>>> probCache = new HashMap<>();
 	public double getProbability(List<PartialState> currentState,
 			Action action, List<PartialState> nextState) {
+		Map<Action,Map<List<PartialState>,Double>> m1 = probCache.get(currentState);
+		if (m1 != null) {
+			Map<List<PartialState>,Double> m2 = m1.get(action);
+			if (m2 != null) {
+				Double d = m2.get(nextState);
+				if (d != null) {
+					return d;
+				}
+			}
+		}
 
 		double product = 1;
 		// Dummy state
@@ -347,9 +358,27 @@ public class PartialTransitionProbabilityLogger {
 			product *= d;
 
 		}
+		addToProbCache(currentState, action, nextState, product);
 		return product;
 	}
-
+	  
+	private void addToProbCache(List<PartialState> currentState, Action action,
+			List<PartialState> nextState, double product) {
+		Map<Action, Map<List<PartialState>, Double>> m1 = probCache.get(currentState);
+		if (m1 == null) {
+			m1 = new HashMap<>();
+			probCache.put(currentState, m1);
+		}
+		Map<List<PartialState>, Double> m2 = m1.get(action);
+		if (m2 == null) {
+			m2 = new HashMap<>();
+			m1.put(action, m2);
+		}
+		m2.put(nextState,product);		
+	}
+	public void clearProbCache() {
+		probCache.clear();
+	}
 	private double getPartialProbability(List<PartialState> nextState,
 			Action action, int stateIndex, ParentValues ps) {
 		Map<Integer, Map<PartialState, Double>> map = p.get(stateIndex).get(ps);

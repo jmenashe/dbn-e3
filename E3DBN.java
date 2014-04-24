@@ -73,7 +73,6 @@ public class E3DBN {
 	// mostly for debugging
 	private int balancingCount = 0;
 	double chanceToExplore;
-	double chanceToExploreOnExploit;
 
 	// State, Action, State -> Visits
 	private Map<List<PartialState>, Integer> stateVisits;
@@ -225,10 +224,7 @@ public class E3DBN {
 			if (currentPolicy == null || currentPolicy.get(state) == null) {
 				currentPolicy = findExplorationPolicy();
 				policy = "exploration";
-
-				Map<List<PartialState>, Action> exploitPolicy = findExploitationPolicy();
-				chanceToExploreOnExploit = chanceToExplore(exploitPolicy, state);
-
+				
 				chanceToExplore = chanceToExplore(currentPolicy, state);
 				// Should we really explore?
 				if (chanceToExplore < exploreThreshold) {
@@ -360,6 +356,9 @@ public class E3DBN {
 	}
 
 	private Map<List<PartialState>, Action> findPolicy(boolean explorationPolicy) {
+		if (explorationPolicy) {
+			ptpl.clearProbCache();
+		}
 		// Value function
 		Map<List<PartialState>, Double> vf = new HashMap<>();
 		Map<List<PartialState>, Double> prevVf = new HashMap<>();
@@ -394,15 +393,14 @@ public class E3DBN {
 					double currentValue = 0;
 					double totalProb = 0;
 					for (List<PartialState> nextState : allStates) {
-						totalProb += ptpl.getProbability(state, action,
+						double thisProb = ptpl.getProbability(state, action,
 								nextState);
+						totalProb += thisProb;
 						if (vf.keySet().contains(nextState)) {
 
-							currentValue += ptpl.getProbability(state, action,
-									nextState) * prevVf.get(nextState);
+							currentValue += thisProb * prevVf.get(nextState);
 						} else {
-							currentValue += ptpl.getProbability(state, action,
-									nextState) * prevVf.get(dummyState);
+							currentValue += thisProb * prevVf.get(dummyState);
 						}
 					}
 					if ((totalProb > 1.1 || totalProb < 0.9) && totalProb != 0) {

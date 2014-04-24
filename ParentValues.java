@@ -4,7 +4,7 @@ import java.util.*;
 
 public final class ParentValues {
     private List<PartialState> parents;
-  
+    int hashCode = -1;
 
     public ParentValues(List<PartialState> fullState, List<Integer> parentIndices) {
     	parents = new ArrayList<PartialState>(parentIndices.size());
@@ -12,14 +12,19 @@ public final class ParentValues {
         	parents.add(
         			fullState.get(parent));
         }
+        calcHashCode();
+    }
+    
+    void calcHashCode() {
+    	final int prime = 31;
+		int result = 1;
+		result = prime * result + ((parents == null) ? 0 : parents.hashCode());
+		hashCode = result;
     }
 
     @Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((parents == null) ? 0 : parents.hashCode());
-		return result;
+		return hashCode;
 	}
 
 	@Override
