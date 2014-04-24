@@ -13,7 +13,7 @@ public class E3DBN {
 
     private class AllActions implements AllActionsGetter {
 
-        Map<List<List<Integer>>, List<List<Integer>>> cache = new HashMap<>();
+        private Map<List<List<Integer>>, List<List<Integer>>> cache = new HashMap<>();
 
         private List<List<Integer>> fullActions(List<List<Integer>> input) {
             List<List<Integer>> returnList = cache.get(input);
@@ -50,11 +50,11 @@ public class E3DBN {
             for (PartialState partial : state) {
                 partialActions.add(partial.possibleActions());
             }
-            for (List<Integer> actints : fullActions(partialActions)) {
+            for (List<Integer> actInts : fullActions(partialActions)) {
                 Action act = new Action(E3Agent.NBR_REACHES, 0, 0);
 
                 for (int i = 0; i < E3Agent.NBR_REACHES; i++) {
-                    act.setInt(i, actints.get(i));
+                    act.setInt(i, actInts.get(i));
                 }
 
                 actions.add(act);
@@ -66,11 +66,12 @@ public class E3DBN {
     }
 
     private AllActions allActions;
-    private final double exploreThreshold = .05;
+    private final double exploreThreshold = 0.05;
     private double discount;
     private long horizonTime;
     private double maxReward;
     private final int partialStateKnownLimit = 5;
+    public String policy = "";
 
     //mostly for debugging
     private int balancingCount = 0;
@@ -160,16 +161,7 @@ public class E3DBN {
         return returnMap;
     }*/
 
-    @SuppressWarnings("unused")
-    private void l(Object obj) {
-        System.out.println(obj);
-    }
-
-
     // Picking the next action {{{
-
-    public String policy = "";
-
     /**
      * Find the next action.
      */
@@ -227,7 +219,6 @@ public class E3DBN {
      * Find the balanced wandering action
      */
     private Action balancedWandering(List<PartialState> state) {
-        Action balancingAction = null;
         Action action = new Action(state.size(), 0);
         
         for(int stateIndex = 0; stateIndex < state.size(); stateIndex++) {
@@ -245,6 +236,7 @@ public class E3DBN {
         }
         return action;
         /*
+        Action balancingAction = null;
         int lowest = Integer.MAX_VALUE;
         for (Action action : allActions.getAllActions(state)) {
             if (balancingAction == null) {
