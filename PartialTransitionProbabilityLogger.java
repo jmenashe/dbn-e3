@@ -89,8 +89,7 @@ public class PartialTransitionProbabilityLogger {
     
     public int getParentSettingPartialActionCount(int targetStateIndex, ParentValues pv, int partialAction) {
     	try {
-    		int ret =parentSettingPartialActionCounts.get(targetStateIndex).get(pv).get(partialAction); 
-    		return ret;
+            return parentSettingPartialActionCounts.get(targetStateIndex).get(pv).get(partialAction);
     	} catch (NullPointerException e) {
     		return 0;
     	}
@@ -296,10 +295,11 @@ public class PartialTransitionProbabilityLogger {
                     connections.get(stateIndex));
 
             Map<Action, Map<PartialState, Double>> map2 = map.get(ps);
-            seenStates.add(new ArrayList<PartialState>(map2.get(action).keySet()));
+            seenStates.add(new ArrayList<>(map2.get(action).keySet()));
         }
 
-        List<List<PartialState>> list = nextStates(seenStates);
+        return nextStates(seenStates);
+
         /*List<Observation> returnList = new ArrayList<>(list.size());
         for (List<PartialState> stateList : list) {
             Observation state = new Observation(stateList.size(), 0);
@@ -309,7 +309,6 @@ public class PartialTransitionProbabilityLogger {
             returnList.add(state);
         }*/
 
-        return list;
     }
 
 
