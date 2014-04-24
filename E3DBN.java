@@ -362,6 +362,7 @@ public class E3DBN {
 	private Map<List<PartialState>, Action> findPolicy(boolean explorationPolicy) {
 		// Value function
 		Map<List<PartialState>, Double> vf = new HashMap<>();
+		Map<List<PartialState>, Double> prevVf = new HashMap<>();
 
 		// Policy
 		Map<List<PartialState>, Action> policy = new HashMap<>();
@@ -376,6 +377,8 @@ public class E3DBN {
 		vf.put(dummyState, 0.0);
 		setReward(dummyState, explorationPolicy ? maxReward : 0);
 
+		prevVf = new HashMap<>(vf);
+		
 		for (long t = 0; t < horizonTime; t++) {
 			for (List<PartialState> state : vf.keySet()) {
 				double bestValue = Double.NEGATIVE_INFINITY;
@@ -391,19 +394,17 @@ public class E3DBN {
 					double currentValue = 0;
 					double totalProb = 0;
 					for (List<PartialState> nextState : allStates) {
-						// for (List<PartialState> nextState :
-						// ptpl.getObservedStates()) {
 						totalProb += ptpl.getProbability(state, action,
 								nextState);
 						if (vf.keySet().contains(nextState)) {
+
 							currentValue += ptpl.getProbability(state, action,
-									nextState) * vf.get(nextState);
+									nextState) * prevVf.get(nextState);
 						} else {
 							currentValue += ptpl.getProbability(state, action,
-									nextState) * vf.get(dummyState);
+									nextState) * prevVf.get(dummyState);
 						}
 					}
-
 					if ((totalProb > 1.1 || totalProb < 0.9) && totalProb != 0) {
 						System.out.println("hej " + totalProb);
 						throw new ArithmeticException();
@@ -419,6 +420,7 @@ public class E3DBN {
 						+ discount * bestValue);
 				policy.put(state, bestAction);
 			}
+		    prevVf = vf;
 		}
 		return policy;
 	}
@@ -441,6 +443,7 @@ public class E3DBN {
 		// Update reward table
 		updateReward(from, reward);
 
+		
 		ptpl.record(from, action, to);
 	}
 

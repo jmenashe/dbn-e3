@@ -103,8 +103,7 @@ public class E3Agent implements AgentInterface {
                 //e3.balancingCount + ", " +
                 e3.getKnownPartialsCount() + ", " + 
                 e3.getKnownFullCount());
-        
-        lastAction = e3.nextAction(stateList);
+
         e3.observe(lastState, lastAction, stateList, reward);
         lastAction = e3.nextAction(stateList);
         lastState = stateList;
