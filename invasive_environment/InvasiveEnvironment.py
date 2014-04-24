@@ -18,6 +18,10 @@ from rlglue.types import Reward_observation_terminal
 import numpy as np
 from networkx import adjacency_matrix
 
+
+REACHES=7
+HABITATS=4
+
 class InvasiveEnvironment(Environment):
     """
     This class implements the invasive species environment. You could set almost all of the parameters by setting the variables
@@ -25,7 +29,7 @@ class InvasiveEnvironment(Environment):
     the domain and action parameters will be set by default. I used some of Brian Tanner's mines code for this environment.
     """
 
-    def __init__(self, simulationParameterObj, actionParameterObj, Bad_Action_Penalty, nbrReaches=7, habitatSize=4, fixedStartState=False,
+    def __init__(self, simulationParameterObj, actionParameterObj, Bad_Action_Penalty, nbrReaches=REACHES, habitatSize=HABITATS, fixedStartState=False,
                  discountFactor=0.9, seed=None):
         """
         :param simulationParameterObj (SimulationParameterClass), contains all the parameters for the domain
@@ -72,10 +76,11 @@ class InvasiveEnvironment(Environment):
             self.simulationParameterObj = SimulationParameterClass(nbrReaches, habitatSize, prodRate, deathRate,
                 exogenousArrivalIndicator, reachArrivalRates, reachArrivalProbs, upStreamRate, downStreamRate,
                 competitionFactor, graph)
+
             self.actionParameterObj = ActionParameterClass(costPerTree=0.1, eradicationCost=0.5, restorationCost=0.9,
                 eradicationRate=1, restorationRate=1,
-                costPerReach=1, emptyCost=0, varEradicationCost=0.5, varInvasiveRestorationCost=0.1,
-                varEmptyRestorationCost=0, budget=100)
+                costPerReach=10, emptyCost=0.05, varEradicationCost=0.4, varInvasiveRestorationCost=0.8,
+                varEmptyRestorationCost=0.4, budget=100)
 
     def env_init(self):
         """
@@ -203,6 +208,7 @@ class InvasiveEnvironment(Environment):
         print "Agent is at: " + str(self.state)
 
 if __name__ == "__main__":
+
     EnvironmentLoader.loadEnvironment(
-        InvasiveEnvironment(simulationParameterObj=None, actionParameterObj=None, Bad_Action_Penalty=-10000,fixedStartState=False, nbrReaches=7,
-            habitatSize=4, seed=1))
+        InvasiveEnvironment(simulationParameterObj=None, actionParameterObj=None, Bad_Action_Penalty=-10000,fixedStartState=False, nbrReaches=REACHES,
+            habitatSize=HABITATS, seed=1))

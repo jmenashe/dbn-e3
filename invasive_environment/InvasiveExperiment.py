@@ -15,6 +15,10 @@ import random
 import math
 import rlglue.RLGlue as RLGlue
 
+
+REACHES=7
+HABITATS=4
+
 def demo():
     statistics = []
     this_score = evaluateAgent()
@@ -74,8 +78,8 @@ def single_evaluation():
 
 RLGlue.RL_init()
 print "Telling the environment to use fixed start state."
-nbrReaches=7
-habitatSize=4
+nbrReaches=REACHES
+habitatSize=HABITATS
 S = array([random.randint(1, 3) for i in xrange(nbrReaches * habitatSize)])
 #S=array([1,1,2, 1, 3, 3, 1])
 S = ",".join(map(str, S))
