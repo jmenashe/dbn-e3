@@ -438,7 +438,7 @@ public class E3DBN {
         updateVisits(from, action, to);
 
         // Update reward table
-        updateReward(to, reward);
+        updateReward(from, reward);
 
         ptpl.record(from, action, to);
     }
@@ -449,7 +449,7 @@ public class E3DBN {
     private void updateVisits(List<PartialState> from, Action action,
                               List<PartialState> to) {
         // State visits
-        stateVisits.put(from, stateVisits.containsKey(from) ? stateVisits.get(from) + 1 : 1);
+        stateVisits.put(to, stateVisits.containsKey(to) ? stateVisits.get(to) + 1 : 1);
 
     }
 
@@ -457,16 +457,16 @@ public class E3DBN {
     /**
      * Update reward table.
      */
-    private void updateReward(List<PartialState> to, double reward) {
-        int visits = getVisits(to);
+    private void updateReward(List<PartialState> from, double reward) {
+        int visits = getVisits(from);
 
         double oldReward = 0;
 
-        if (rewards.containsKey(to)) {
-            oldReward = rewards.get(to);
+        if (rewards.containsKey(from)) {
+            oldReward = rewards.get(from);
         }
 
-        rewards.put(to, (reward + oldReward * visits) / (visits + 1));
+        rewards.put(from, (reward + oldReward * visits) / (visits + 1));
     }
 
     /**
