@@ -19,8 +19,8 @@ import numpy as np
 from networkx import adjacency_matrix
 
 
-REACHES=7
-HABITATS=4
+REACHES=4
+HABITATS=3
 
 class InvasiveEnvironment(Environment):
     """
