@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * An implementation of the E3 algorithm in a discounted factored MDP.
@@ -165,8 +166,10 @@ public class E3DBN {
     /**
      * Find the next action.
      */
+    Random r = new Random();
     public Action nextAction(List<PartialState> state) {
-        if (simulatorState == SimulatorState.Frozen) {
+       
+    	if (simulatorState == SimulatorState.Frozen) {
             if (ptpl.isKnown(state)) {
                 policy = "frozen policy";
                 return currentPolicy.get(state);
@@ -211,6 +214,16 @@ public class E3DBN {
             }
 
             currentTime++;
+            
+            /*if (policy.equals("exploration")) {
+            	Action a = new Action(4,0);
+            	a.intArray[0] = 1;
+            	a.intArray[1] = 1;
+            	a.intArray[2] = 1;
+            	a.intArray[3] = 1;
+            	return a;
+            }*/
+            
             return currentPolicy.get(state);
         }
     }
@@ -219,6 +232,7 @@ public class E3DBN {
      * Find the balanced wandering action
      */
     private Action balancedWandering(List<PartialState> state) {
+
         Action action = new Action(state.size(), 0);
         
         for(int stateIndex = 0; stateIndex < state.size(); stateIndex++) {
@@ -332,7 +346,7 @@ public class E3DBN {
         }
 
         vf.put(dummyState, 0.0);
-        setReward(dummyState, explorationPolicy ? 0 : -100);
+        setReward(dummyState, explorationPolicy ? maxReward : 0);
 
         for (long t = 0; t < horizonTime; t++) {
             for (List<PartialState> state : vf.keySet()) {
@@ -369,13 +383,13 @@ public class E3DBN {
                     }
                 }
 
-                vf.put(state, getReward(state) + discount * bestValue);
+                vf.put(state, (explorationPolicy) ? 0 : getReward(state) + discount * bestValue);
                 policy.put(state, bestAction);
             }
         }
         return policy;
     }
-
+    
     // }}}
 
     // Updating necessary statistics {{{

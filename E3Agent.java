@@ -12,8 +12,8 @@ import java.util.List;
 
 public class E3Agent implements AgentInterface {
 
-    public static final int NBR_REACHES = 3;
-    public static final int HABITATS_PER_REACHES = 2;
+    public static final int NBR_REACHES = 4;
+    public static final int HABITATS_PER_REACHES = 3;
 
     private E3DBN e3;
 
@@ -21,18 +21,21 @@ public class E3Agent implements AgentInterface {
     private Action lastAction;
     private int stepCount = 1;
 
+    private double getMaxReward() {
+    	return 11.6*NBR_REACHES + 0.9*NBR_REACHES*HABITATS_PER_REACHES;
+    }
 
     public void agent_init(String taskSpecification) {
 
         TaskSpec taskspec = new TaskSpec(taskSpecification);
 
-        List<Action> allActions = createAllActionsList(taskspec);
+        //List<Action> allActions = createAllActionsList(taskspec);
 
-        DoubleRange rewardRange = taskspec.getRewardRange();
+        //DoubleRange rewardRange = taskspec.getRewardRange();
         
         e3 = new E3DBN(0.90, // Discount
                 0.90, // epsilon
-                rewardRange.getMax(), // max reward
+                getMaxReward(), // max reward
                 taskspec,
                 new ArrayList<PartialState>());
 
@@ -84,14 +87,10 @@ public class E3Agent implements AgentInterface {
 
 
     public Action agent_step(double reward, Observation state) {
-        List<PartialState> stateList = Reach.allReaches(state, NBR_REACHES,
+        reward += getMaxReward();
+    	List<PartialState> stateList = Reach.allReaches(state, NBR_REACHES,
                 HABITATS_PER_REACHES);
-        lastAction = e3.nextAction(stateList);
-        e3.observe(lastState, lastAction, stateList, reward);
-        lastAction = e3.nextAction(stateList);
-        lastState = stateList;
-        if (e3.chanceToExploreOnExploit - e3.chanceToExplore > 0.05)
-        	System.out.println("aaaargh");
+
         l(stepCount++ + ") State: " +
                 lastState +
                 " Action: " +
@@ -103,6 +102,13 @@ public class E3Agent implements AgentInterface {
                 e3.chanceToExploreOnExploit + ", " +
                 //e3.balancingCount + ", " +
                 e3.getKnownCount());
+        
+        lastAction = e3.nextAction(stateList);
+        e3.observe(lastState, lastAction, stateList, reward);
+        lastAction = e3.nextAction(stateList);
+        lastState = stateList;
+        if (e3.chanceToExploreOnExploit - e3.chanceToExplore > 0.05)
+        	System.out.println("aaaargh");
 
 
         return lastAction;
