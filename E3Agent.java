@@ -101,7 +101,8 @@ public class E3Agent implements AgentInterface {
                 e3.chanceToExplore + ", " +
                 e3.chanceToExploreOnExploit + ", " +
                 //e3.balancingCount + ", " +
-                e3.getKnownCount());
+                e3.getKnownPartialsCount() + ", " + 
+                e3.getKnownFullCount());
         
         lastAction = e3.nextAction(stateList);
         e3.observe(lastState, lastAction, stateList, reward);

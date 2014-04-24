@@ -1,48 +1,45 @@
 import org.rlcommunity.rlglue.codec.taskspec.TaskSpec;
 import org.rlcommunity.rlglue.codec.types.Action;
+import org.rlcommunity.rlglue.codec.types.Observation;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 /**
  * An implementation of the E3 algorithm in a discounted factored MDP.
  */
 public class E3DBN {
+    private static Map<List<List<Integer>>, List<List<Integer>>> cache = new HashMap<>();
+    private static List<List<Integer>> allCombinations(List<List<Integer>> input) {
+        List<List<Integer>> returnList = cache.get(input);
+
+        if (returnList != null) {
+            return returnList;
+        }
+
+        int max = 1;
+        int[] sizes = new int[input.size()];
+        int k = 0;
+        for (List<Integer> l : input) {
+            max *= l.size();
+            sizes[k++] = l.size();
+        }
+        returnList = new ArrayList<>(max);
+        for (int i = 0; i < max; i++) {
+            int iCpy = i;
+            List<Integer> subList = new ArrayList<>(input.size());
+            for (int j = 0; j < input.size(); j++) {
+                subList.add(input.get(j).get(iCpy % sizes[j]));
+                iCpy = iCpy / sizes[j];
+            }
+            returnList.add(subList);
+        }
+        cache.put(input, returnList);
+        return returnList;
+    }
 
     private class AllActions implements AllActionsGetter {
 
-        private Map<List<List<Integer>>, List<List<Integer>>> cache = new HashMap<>();
 
-        private List<List<Integer>> fullActions(List<List<Integer>> input) {
-            List<List<Integer>> returnList = cache.get(input);
-
-            if (returnList != null) {
-                return returnList;
-            }
-
-            int max = 1;
-            int[] sizes = new int[input.size()];
-            int k = 0;
-            for (List<Integer> l : input) {
-                max *= l.size();
-                sizes[k++] = l.size();
-            }
-            returnList = new ArrayList<>(max);
-            for (int i = 0; i < max; i++) {
-                int iCpy = i;
-                List<Integer> subList = new ArrayList<>(input.size());
-                for (int j = 0; j < input.size(); j++) {
-                    subList.add(input.get(j).get(iCpy % sizes[j]));
-                    iCpy = iCpy / sizes[j];
-                }
-                returnList.add(subList);
-            }
-            cache.put(input, returnList);
-            return returnList;
-        }
 
         @Override
         public List<Action> getAllActions(List<PartialState> state) {
@@ -51,7 +48,7 @@ public class E3DBN {
             for (PartialState partial : state) {
                 partialActions.add(partial.possibleActions());
             }
-            for (List<Integer> actInts : fullActions(partialActions)) {
+            for (List<Integer> actInts : allCombinations(partialActions)) {
                 Action act = new Action(E3Agent.NBR_REACHES, 0, 0);
 
                 for (int i = 0; i < E3Agent.NBR_REACHES; i++) {
@@ -93,7 +90,8 @@ public class E3DBN {
     // Current time we have expl*
     private long currentTime;
 
-
+    private Set<List<PartialState>> allStates;
+    
     // This is the absorbing state which represents all unvisited states
     private List<PartialState> dummyState;
 
@@ -117,6 +115,8 @@ public class E3DBN {
             TaskSpec taskspec,
             List<PartialState> dummyState) {
 
+    	
+    	
         stateVisits = new HashMap<>();
 
         String edges = taskspec.getExtraString();
@@ -138,7 +138,9 @@ public class E3DBN {
 
 
         rewards = new HashMap<>();
-
+        
+        allStates = new HashSet<>();
+        computeAllStates();
         // This is the absorbing state which represents all unvisited states
         this.dummyState = dummyState;
 
@@ -162,11 +164,35 @@ public class E3DBN {
         return returnMap;
     }*/
 
+    public Set<List<PartialState>> getAllStates() {
+    	return allStates;
+    }
+    
+    private void computeAllStates() {
+    	int habitatCount = E3Agent.HABITATS_PER_REACHES * E3Agent.NBR_REACHES;
+    	List<List<Integer>> possibleStates = new ArrayList<>(habitatCount);
+    	for(int i = 0; i < habitatCount; i++) {
+    		List<Integer> inner = new ArrayList<>(3);
+    		possibleStates.add(inner);
+    		for(int j = 1; j <= 3; j++) {
+    			inner.add(j);
+    		}
+    	}
+    	for(List<Integer> intList : possibleStates) {
+    		Observation o = new Observation(habitatCount,0);
+    		for(int i = 0; i < intList.size(); i++) {
+    			o.intArray[i] = intList.get(i);
+    		}
+    		List<PartialState> state = Reach.allReaches(o, E3Agent.NBR_REACHES, E3Agent.HABITATS_PER_REACHES);
+    		allStates.add(state);
+    	}
+    	
+    }
+    
     // Picking the next action {{{
     /**
      * Find the next action.
      */
-    Random r = new Random();
     public Action nextAction(List<PartialState> state) {
        
     	if (simulatorState == SimulatorState.Frozen) {
@@ -362,20 +388,22 @@ public class E3DBN {
                 for (Action action : allActions.getAllActions(state)) {
                     double currentValue = 0;
                     double totalProb = 0;
-                    for (List<PartialState> o : ptpl.getObservedStates()) {
-                    	totalProb += ptpl.getProbability(state, action, o);
-                        if (vf.keySet().contains(o)) {
+                    for(List<PartialState> nextState : allStates) {
+                    //for (List<PartialState> nextState : ptpl.getObservedStates()) {
+                    	totalProb += ptpl.getProbability(state, action, nextState);
+                        if (vf.keySet().contains(nextState)) {
                             currentValue +=
-                                    ptpl.getProbability(state, action, o) * vf.get(o);
+                                    ptpl.getProbability(state, action, nextState) * vf.get(nextState);
                         } else {
-                        	
                             currentValue +=
-                                    ptpl.getProbability(state, action, o) * vf.get(dummyState);
+                                    ptpl.getProbability(state, action, nextState) * vf.get(dummyState);
                         }
                     }
 
                     if (totalProb > 1.1 || totalProb < 0.9) {
-                    	System.out.println("hej");
+                    	//System.out.println("hej");
+                    	//throw new ArithmeticException();
+                    	
                     }
                     if (currentValue > bestValue) {
                         bestValue = currentValue;
@@ -460,8 +488,12 @@ public class E3DBN {
         return rewards.get(state);
     }
 
-    public int getKnownCount() {
+    public int getKnownPartialsCount() {
         return ptpl.knownCount;
+    }
+    
+    public int getKnownFullCount() {
+    	return ptpl.knownStates.size();
     }
 
     public int getBalancingActionCount() {
