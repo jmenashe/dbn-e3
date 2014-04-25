@@ -118,21 +118,12 @@ public class E3DBN {
 
 		String edges = taskspec.getExtraString();
 
-		DiGraph graph = DiGraph.graphFromString(edges);
-		System.out.println(edges);
-		for (int i = 0; i < graph.edges().size(); i++) {
-			if (graph.edges().get(i).contains(E3Agent.NBR_REACHES)) {
-				// MOAAHAHAHAHAHAHAHAHA
-				graph.edges()
-						.get(i)
-						.remove(graph.edges().get(i)
-								.indexOf(E3Agent.NBR_REACHES));
-			}
-		}
-		System.out.println(graph.edges());
+        Map<Integer, List<Integer>> connections = Graph.graphFromString(edges);
+        System.out.println(edges);
+        System.out.println(connections);
 
 		allActions = new AllActions();
-		ptpl = new PartialTransitionProbabilityLogger(graph.edges(),
+		ptpl = new PartialTransitionProbabilityLogger(connections,
 				partialStateKnownLimit, allActions);
 
 		rewards = new HashMap<>();
