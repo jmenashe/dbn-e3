@@ -12,8 +12,8 @@ import java.util.List;
 
 public class E3Agent implements AgentInterface {
 
-    public static final int NBR_REACHES = 3;
-    public static final int HABITATS_PER_REACHES = 2;
+    public static final int NBR_REACHES = 4;
+    public static final int HABITATS_PER_REACHES = 3;
 
     private E3DBN e3;
 
@@ -78,9 +78,13 @@ public class E3Agent implements AgentInterface {
     public Action agent_start(Observation state) {
         List<PartialState> stateList = Reach.allReaches(state, NBR_REACHES,
                 HABITATS_PER_REACHES);
-        lastAction = e3.nextAction(stateList);
 
         lastState = stateList;
+
+        lastAction = new Action(NBR_REACHES, 0, 0);
+        for (int i = 0; i < NBR_REACHES; i++) {
+            lastAction.intArray[i] = 1;
+        }
 
         return lastAction;
     }
@@ -91,7 +95,7 @@ public class E3Agent implements AgentInterface {
     	List<PartialState> stateList = Reach.allReaches(state, NBR_REACHES,
                 HABITATS_PER_REACHES);
 
-        l(stepCount++ + ") State: " +
+        l(stepCount++ + ") STEP State: " +
                 lastState +
                 " Action: " +
                 Arrays.toString(lastAction
@@ -106,7 +110,6 @@ public class E3Agent implements AgentInterface {
         e3.observe(lastState, lastAction, stateList, reward);
         lastAction = e3.nextAction(stateList);
         lastState = stateList;
-
 
         return lastAction;
     }

@@ -259,6 +259,7 @@ public class E3DBN {
 			}
 			action.intArray[stateIndex] = bestAction;
 		}
+
 		return action;
 		/*
 		 * Action balancingAction = null; int lowest = Integer.MAX_VALUE; for
@@ -297,7 +298,7 @@ public class E3DBN {
 		// Find probability that we end up in an unknown state in horizonTime
 		// steps
 		for (long i = 0; i < horizonTime; i++) {
-			for (List<PartialState> state : getAllStates()) {
+			for (List<PartialState> state : ptpl.getObservedStates()) {
 				if (ptpl.isKnown(state)) {
 					double probability = 0;
 
@@ -503,8 +504,8 @@ public class E3DBN {
 
 	public void freezePolicy() {
 		System.out.println("Freezing");
-		// this.simulatorState = SimulatorState.Frozen;
-		// currentPolicy = findExploitationPolicy();
+		this.simulatorState = SimulatorState.Frozen;
+		currentPolicy = findExploitationPolicy();
 	}
 
 	public void unFreezePolicy() {

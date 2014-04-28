@@ -132,6 +132,9 @@ class InvasiveEnvironment(Environment):
     def env_step(self, action):
         action = action.intArray
 
+        if len(action) != 3:
+            print action, len(action)
+
         assert len(action) == self.simulationParameterObj.nbrReaches, "Expected " + str(
             self.simulationParameterObj.nbrReaches) + " integer action."
 
@@ -213,8 +216,8 @@ class InvasiveEnvironment(Environment):
     def printState(self):
         print "Agent is at: " + str(self.state)
 
-if __name__ == "__main__":
 
+def main():
     EnvironmentLoader.loadEnvironment(
         InvasiveEnvironment(
             simulationParameterObj = None,
@@ -224,3 +227,6 @@ if __name__ == "__main__":
             nbrReaches = REACHES,
             habitatSize = HABITATS,
             seed = 1))
+
+if __name__ == "__main__":
+    main()
