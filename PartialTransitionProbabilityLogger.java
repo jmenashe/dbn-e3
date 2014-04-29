@@ -73,11 +73,12 @@ public class PartialTransitionProbabilityLogger {
 
 	private void increaseParentSettingPartialActionCounts(int targetStateIndex,
 			ParentValuesAction pva) {
+        int index = connections.get(targetStateIndex).size();
 		Map<ParentValues, Map<Integer, Integer>> map1 = parentSettingPartialActionCounts
-				.get(targetStateIndex);
+				.get(index);
 		if (map1 == null) {
 			map1 = new HashMap<>();
-			parentSettingPartialActionCounts.put(targetStateIndex, map1);
+			parentSettingPartialActionCounts.put(index, map1);
 		}
 		Map<Integer, Integer> map2 = map1.get(pva.getPv());
 		if (map2 == null) {
@@ -93,44 +94,20 @@ public class PartialTransitionProbabilityLogger {
 	public int getParentSettingPartialActionCount(int targetStateIndex,
 			ParentValues pv, int partialAction) {
 		try {
-			return parentSettingPartialActionCounts.get(targetStateIndex)
+			return parentSettingPartialActionCounts.get(connections.get(targetStateIndex).size())
 					.get(pv).get(partialAction);
 		} catch (NullPointerException e) {
 			return 0;
 		}
 	}
 
-	/*
-	 * private void increaseStateActionStateCount(PartialState ps,
-	 * ParentValuesAction psa) {
-	 * 
-	 * Map<ParentValues, Map<Action, Integer>> theMap = stateActionStateCounts
-	 * .get(ps); if (theMap == null) { theMap = new HashMap<>();
-	 * stateActionStateCounts.put(ps, theMap); }
-	 * 
-	 * Map<Action, Integer> theMap2 = theMap.get(psa.getPv()); if (theMap2 ==
-	 * null) { theMap2 = new HashMap<>(); theMap.put(psa.getPv(), theMap2); }
-	 * 
-	 * Integer count = theMap2.get(psa.getAction()); if (count == null) { count
-	 * = 0; } count++; theMap2.put(psa.getAction(), count);
-	 * 
-	 * }
-	 */
-
-	/*
-	 * private void increaseStateCount(int stateIndex, ParentValues ps) {
-	 * Integer count; Map<ParentValues, Integer> map2 =
-	 * stateCounts.get(stateIndex); if (map2 == null) { map2 = new HashMap<>();
-	 * stateCounts.put(stateIndex, map2); } count = map2.get(ps); if (count ==
-	 * null) { count = 0; } count++; map2.put(ps, count); }
-	 */
-
 	private void increaseStateActionCount(int stateIndex, ParentValuesAction psa) {
-		Map<ParentValuesAction, Integer> map = stateActionCounts
-				.get(stateIndex);
+		int index = connections.get(stateIndex).size();
+        Map<ParentValuesAction, Integer> map = stateActionCounts
+				.get(index);
 		if (map == null) {
 			map = new HashMap<>();
-			stateActionCounts.put(stateIndex, map);
+			stateActionCounts.put(index, map);
 		}
 		Integer count = map.get(psa);
 		if (count == null) {
@@ -142,27 +119,6 @@ public class PartialTransitionProbabilityLogger {
 			addToKnown(stateIndex, psa.getPv(), psa.getAction());
 		}
 	}
-
-	public int getStateActionCount(int stateVar, ParentValuesAction psa) {
-		Map<ParentValuesAction, Integer> stateCounts = stateActionCounts
-				.get(stateVar);
-		if (stateCounts == null) {
-			return 0;
-		}
-		Integer count = stateCounts.get(psa);
-		if (count == null) {
-			return 0;
-		} else {
-			return count;
-		}
-	}
-
-	/*
-	 * public int getStateCount(int stateVar, ParentValues ps) {
-	 * Map<ParentValues, Integer> counts = stateCounts.get(stateVar); if (counts
-	 * == null) { return 0; } Integer count = counts.get(ps); if (count == null)
-	 * { return 0; } else { return count; } }
-	 */
 
 	public void record(List<PartialState> from, Action action,
 			List<PartialState> to) {
@@ -204,11 +160,12 @@ public class PartialTransitionProbabilityLogger {
 	}
 
 	private void addToKnown(int targetIndex, ParentValues ps, Action action) {
-		Map<ParentValues, List<Integer>> psMap = knownPartialStates
-				.get(targetIndex);
+        int index = connections.get(targetIndex).size();
+        Map<ParentValues, List<Integer>> psMap = knownPartialStates
+				.get(index);
 		if (psMap == null) {
 			psMap = new HashMap<>();
-			knownPartialStates.put(targetIndex, psMap);
+			knownPartialStates.put(index, psMap);
 		}
 
 		List<Integer> actionList = psMap.get(ps);
@@ -245,7 +202,7 @@ public class PartialTransitionProbabilityLogger {
 					connections.get(stateIndex));
 			for (Action a : allActionsGetter.getAllActions(observedState)) {
 				Map<ParentValues, List<Integer>> map = knownPartialStates
-						.get(stateIndex);
+						.get(connections.get(stateIndex).size());
 				if (map == null) {
 					return false;
 				}
