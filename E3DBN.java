@@ -2,6 +2,7 @@ import org.rlcommunity.rlglue.codec.taskspec.TaskSpec;
 import org.rlcommunity.rlglue.codec.types.Action;
 import org.rlcommunity.rlglue.codec.types.Observation;
 
+import java.security.Policy;
 import java.util.*;
 
 /**
@@ -216,8 +217,11 @@ public class E3DBN {
 
 			// Start exploitation/exploration (the second condition is there
 			// to deal with states becoming known while expl*ing.)
-			if (currentPolicy == null || currentPolicy.get(state) == null) {
-				if (prevExplorationKnownCount < ptpl.knownCount) {
+			if (currentTime == 0 || currentPolicy.get(state) == null) {
+				if (prevExplorationKnownCount < ptpl.knownCount || 
+						prevExplorationPolicy == null || 
+						prevExplorationPolicy.get(state) == null) {
+						
 					currentPolicy = findExplorationPolicy();
 					prevExplorationPolicy = currentPolicy;
 					prevExplorationKnownCount = ptpl.knownCount;
@@ -225,8 +229,8 @@ public class E3DBN {
 					currentPolicy = prevExplorationPolicy;
 				}
 				policy = "exploration";
-				
 				chanceToExplore = chanceToExplore(currentPolicy, state);
+				
 				// Should we really explore?
 				if (chanceToExplore < exploreThreshold) {
 					policy = "exploitation";
@@ -369,7 +373,7 @@ public class E3DBN {
 		}
 		// Value function
 		Map<List<PartialState>, Double> vf = new HashMap<>();
-		Map<List<PartialState>, Double> prevVf = new HashMap<>();
+		Map<List<PartialState>, Double> prevVf;
 
 		// Policy
 		Map<List<PartialState>, Action> policy = new HashMap<>();
