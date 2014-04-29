@@ -14,6 +14,7 @@ import random
 
 import math
 import rlglue.RLGlue as RLGlue
+from datetime import datetime
 
 
 REACHES=3
@@ -36,7 +37,7 @@ def demo():
         printScore((i + 1) * 25, this_score)
         statistics.append(this_score)
 
-    saveResultToCSV(statistics, "results.csv")
+    saveResultToCSV(statistics, "results_%s.csv" % datetime.now().replace(microsecond=0).isoformat('_'))
 
 
 def printScore(afterEpisodes, score_tuple):
