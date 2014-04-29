@@ -1,3 +1,4 @@
+package sysopenvironment;
 /*
  * Copyright 2008 Brian Tanner
  * http://rl-glue-ext.googlecode.com/
