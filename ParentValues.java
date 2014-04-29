@@ -7,7 +7,7 @@ public final class ParentValues {
     int hashCode = -1;
 
     public ParentValues(List<PartialState> fullState, List<Integer> parentIndices) {
-    	parents = new ArrayList<PartialState>(parentIndices.size());
+    	parents = new ArrayList<>(parentIndices.size());
         for(int parent : parentIndices) {
         	parents.add(
         			fullState.get(parent));
@@ -15,7 +15,7 @@ public final class ParentValues {
         calcHashCode();
     }
     
-    void calcHashCode() {
+    private void calcHashCode() {
     	final int prime = 31;
 		int result = 1;
 		result = prime * result + ((parents == null) ? 0 : parents.hashCode());

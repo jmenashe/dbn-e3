@@ -26,11 +26,7 @@ public class PartialTransitionProbabilityLogger {
 		return observedStates;
 	}
 
-	public Set<List<PartialState>> getKnownStates() {
-		return knownStates;
-	}
-
-	// map from target state index to
+    // map from target state index to
 	// map from parents' state to
 	// map from partial action to
 	// map from partial target state
@@ -179,20 +175,7 @@ public class PartialTransitionProbabilityLogger {
 		knownCount++;
 	}
 
-	public double getProbability(int stateIndex, ParentValues ps,
-			Action action, PartialState state) {
-		Map<Integer, Map<PartialState, Double>> map = p.get(stateIndex).get(ps);
-		if (map == null)
-			return 0.0;
-		Map<PartialState, Double> map2 = map.get(action.getInt(stateIndex));
-		if (map2 == null)
-			return 0.0;
-		Double prob = map2.get(state);
-		return prob == null ? 0.0 : prob;
-
-	}
-
-	public boolean isKnown(List<PartialState> observedState) {
+    public boolean isKnown(List<PartialState> observedState) {
 		if (knownStates.contains(observedState)) {
 			return true;
 		}
@@ -219,11 +202,7 @@ public class PartialTransitionProbabilityLogger {
 		return true;
 	}
 
-	public Map<Integer, Map<ParentValues, List<Integer>>> getKnown() {
-		return knownPartialStates;
-	}
-
-	public List<List<PartialState>> statesFromPartialStates(
+    public List<List<PartialState>> statesFromPartialStates(
 			List<PartialState> wholeState, Action action) {
 
 		List<List<PartialState>> seenStates = new ArrayList<>(wholeState.size());
