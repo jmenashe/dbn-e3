@@ -81,8 +81,8 @@ RLGlue.RL_init()
 print "Telling the environment to use fixed start state."
 nbrReaches=REACHES
 habitatSize=HABITATS
-S = array([random.randint(1, 3) for i in xrange(nbrReaches * habitatSize)])
-#S=array([1,1,2, 1, 3, 3, 1])
+#S = array([random.randint(1, 3) for i in xrange(nbrReaches * habitatSize)])
+S=array([1,1,2, 1, 3, 3, 1][0:nbrReaches * habitatSize])
 S = ",".join(map(str, S))
 print S
 RLGlue.RL_env_message("set-start-state "+S)
