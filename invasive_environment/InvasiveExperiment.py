@@ -14,11 +14,14 @@ import random
 
 import math
 import rlglue.RLGlue as RLGlue
-from datetime import datetime
 
+from datetime import datetime
+import os
 
 REACHES=3
-HABITATS=2
+HABITATS=3
+
+RESULTS_DIR = "invasive_results"
 
 def demo():
     statistics = []
@@ -28,16 +31,21 @@ def demo():
 
     for i in range(0, 10):
         for j in range(0, 10):
-            RLGlue.RL_env_message("set-start-state " + S)
+            RLGlue.RL_env_message("set-start-state " + startingState)
             RLGlue.RL_start()
             RLGlue.RL_episode(100)
-        RLGlue.RL_env_message("set-start-state " + S)
+        RLGlue.RL_env_message("set-start-state " + startingState)
         RLGlue.RL_start()
         this_score = evaluateAgent()
         printScore((i + 1) * 25, this_score)
         statistics.append(this_score)
 
-    saveResultToCSV(statistics, "results_%s.csv" % datetime.now().replace(microsecond=0).isoformat('_'))
+    saveResultToCSV(
+        statistics,
+        REACHES,
+        HABITATS,
+        "results_%s.csv" % datetime.now().replace(microsecond=0).isoformat('_')
+    )
 
 
 def printScore(afterEpisodes, score_tuple):
@@ -66,30 +74,39 @@ def evaluateAgent():
     return mean, standard_dev
 
 
-def saveResultToCSV(statistics, fileName):
-    numpy.savetxt(fileName, statistics, delimiter=",")
+def saveResultToCSV(statistics, reaches, habitats, fileName):
+    filepath = os.path.join(RESULTS_DIR, fileName)
+    if not os.path.exists(RESULTS_DIR):
+        os.makedirs(RESULTS_DIR)
+
+    numpy.savetxt(filepath, statistics, delimiter=",")
+
+    with open(filepath, "a") as f:
+        f.write("# Reaches: %s, Habitats: %s" % (reaches, habitats))
 
 
-#
 # Just do a single evaluateAgent and print it
-#
 def single_evaluation():
     this_score = evaluateAgent()
     printScore(0, this_score)
 
 RLGlue.RL_init()
 print "Telling the environment to use fixed start state."
-nbrReaches=REACHES
-habitatSize=HABITATS
-#S = array([random.randint(1, 3) for i in xrange(nbrReaches * habitatSize)])
-S=array([1,1,2, 1, 3, 3, 1][0:nbrReaches * habitatSize])
-S = ",".join(map(str, S))
-print S
-RLGlue.RL_env_message("set-start-state "+S)
+
+rand = random.Random(1) # Use same state each time
+startingState = array([rand.randint(1, 3) for i in xrange(REACHES * HABITATS)])
+
+#S=array([1,1,2, 1, 3, 3, 1][0:nbrReaches * habitatSize])
+startingState = ",".join(map(str, startingState))
+print startingState
+
+RLGlue.RL_env_message("set-start-state "+startingState)
+
 RLGlue.RL_start()
 
 print "Starting offline demo\n----------------------------\nWill alternate learning for 10 episodes, then freeze policy and evaluate for 10 episodes.\n"
 print "After Episode\tMean Return\tStandard Deviation\n-------------------------------------------------------------------------"
+
 demo()
 
 print "Evaluating the agent again with the random start state:\n\t\tMean Return\tStandardDeviation\n-----------------------------------------------------"
