@@ -123,13 +123,13 @@ public class PartialTransitionProbabilityLogger {
 
 			ParentValues pv = new ParentValues(from,
 					connections.get(stateIndex));
-
-			Map<Integer, Map<PartialState, Double>> m = p.get(stateIndex).get(
+			int index = connections.get(stateIndex).size();
+			Map<Integer, Map<PartialState, Double>> m = p.get(index).get(
 					pv);
 
 			if (m == null) {
 				m = new HashMap<>();
-				p.get(stateIndex).put(pv, m);
+				p.get(index).put(pv, m);
 			}
 			Map<PartialState, Double> m2 = m.get(action.getInt(stateIndex));
 			if (m2 == null) {
@@ -175,7 +175,8 @@ public class PartialTransitionProbabilityLogger {
 		knownCount++;
 	}
 
-    public boolean isKnown(List<PartialState> observedState) {
+
+	public boolean isKnown(List<PartialState> observedState) {
 		if (knownStates.contains(observedState)) {
 			return true;
 		}
@@ -183,7 +184,7 @@ public class PartialTransitionProbabilityLogger {
 
 			ParentValues ps = new ParentValues(observedState,
 					connections.get(stateIndex));
-			for (Action a : allActionsGetter.getAllActions(observedState)) {
+			for (Action action : allActionsGetter.getAllActions(observedState)) {
 				Map<ParentValues, List<Integer>> map = knownPartialStates
 						.get(connections.get(stateIndex).size());
 				if (map == null) {
@@ -193,7 +194,7 @@ public class PartialTransitionProbabilityLogger {
 				if (list == null) {
 					return false;
 				}
-				if (!list.contains(a.intArray[stateIndex])) {
+				if (!list.contains(action.intArray[stateIndex])) {
 					return false;
 				}
 			}
@@ -208,11 +209,12 @@ public class PartialTransitionProbabilityLogger {
 		List<List<PartialState>> seenStates = new ArrayList<>(wholeState.size());
 		for (int stateIndex = 0; stateIndex < wholeState.size(); stateIndex++) {
 			Map<ParentValues, Map<Integer, Map<PartialState, Double>>> map = p
-					.get(stateIndex);
+					.get(connections.get(stateIndex).size() );
 			ParentValues ps = new ParentValues(wholeState,
 					connections.get(stateIndex));
 
 			Map<Integer, Map<PartialState, Double>> map2 = map.get(ps);
+			
 			seenStates.add(new ArrayList<>(map2.get(action.getInt(stateIndex))
 					.keySet()));
 		}
@@ -247,12 +249,14 @@ public class PartialTransitionProbabilityLogger {
 	public int getSmallestPartialStateActionVisitCount(Action action,
 			List<PartialState> state) {
 		int smallest = Integer.MAX_VALUE;
+		
 		for (int stateIndex = 0; stateIndex < state.size(); stateIndex++) {
 			ParentValues ps = new ParentValues(state,
 					connections.get(stateIndex));
 
 			try {
-				smallest = Math.min(smallest, stateActionCounts.get(stateIndex)
+				int index = connections.get(stateIndex).size();
+				smallest = Math.min(smallest, stateActionCounts.get(index)
 						.get(new ParentValuesAction(ps, action)));
 			} catch (NullPointerException e) {
 				return 0;
@@ -317,7 +321,7 @@ public class PartialTransitionProbabilityLogger {
 	}
 	private double getPartialProbability(List<PartialState> nextState,
 			Action action, int stateIndex, ParentValues ps) {
-		Map<Integer, Map<PartialState, Double>> map = p.get(stateIndex).get(ps);
+		Map<Integer, Map<PartialState, Double>> map = p.get(connections.get(stateIndex).size()).get(ps);
 		if (map == null) {
 			return 0.0;
 		}
