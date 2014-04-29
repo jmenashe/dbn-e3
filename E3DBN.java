@@ -68,6 +68,8 @@ public class E3DBN {
 	private long horizonTime;
 	private double maxReward;
 	private final int partialStateKnownLimit = 5;
+	private int prevExplorationKnownCount = -1;
+	private int prevExploitationKnownCount = -1;
 	public String policy = "";
 
 	// mostly for debugging
@@ -84,6 +86,8 @@ public class E3DBN {
 
 	// Current policy
 	private Map<List<PartialState>, Action> currentPolicy;
+	private Map<List<PartialState>, Action> prevExplorationPolicy;
+	private Map<List<PartialState>, Action> prevExploitationPolicy;
 
 	// Current time we have expl*
 	private long currentTime;
@@ -213,14 +217,26 @@ public class E3DBN {
 			// Start exploitation/exploration (the second condition is there
 			// to deal with states becoming known while expl*ing.)
 			if (currentPolicy == null || currentPolicy.get(state) == null) {
-				currentPolicy = findExplorationPolicy();
+				if (prevExplorationKnownCount < ptpl.knownCount) {
+					currentPolicy = findExplorationPolicy();
+					prevExplorationPolicy = currentPolicy;
+					prevExplorationKnownCount = ptpl.knownCount;
+				} else {
+					currentPolicy = prevExplorationPolicy;
+				}
 				policy = "exploration";
 				
 				chanceToExplore = chanceToExplore(currentPolicy, state);
 				// Should we really explore?
 				if (chanceToExplore < exploreThreshold) {
-					currentPolicy = findExploitationPolicy();
 					policy = "exploitation";
+					if (prevExploitationKnownCount < ptpl.knownCount) {
+						currentPolicy = findExploitationPolicy();
+						prevExploitationPolicy = currentPolicy;
+						prevExploitationKnownCount = ptpl.knownCount;
+					} else {
+						currentPolicy = prevExploitationPolicy;
+					}
 				}
 
 			}
