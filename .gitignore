@@ -1,5 +1,4 @@
 # Java #
-
 *.jar
 *.class
 
@@ -14,7 +13,7 @@ out/
 .classpath
 .settings
 
-# OS generated files #
+# Generated files #
 .DS_Store
 ehthumbs.db
 Icon?
