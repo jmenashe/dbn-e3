@@ -16,8 +16,8 @@ import math
 import rlglue.RLGlue as RLGlue
 
 
-REACHES=4
-HABITATS=3
+REACHES=3
+HABITATS=2
 
 def demo():
     statistics = []
