@@ -44,11 +44,26 @@ public final class ParentValues {
 		return true;
 	}
 
+	public PartialState getSelfParent() {
+		return parents.get(parents.size()-1);
+	}
+	
+	public PartialState getParent(int stateIndex) {
+		return parents.get(stateIndex);
+		
+	}
+	
+	
+	public List<PartialState> getParents() {
+		return parents;
+	}
+	
 	public String toString() {
         StringBuilder sb = new StringBuilder("Parent values [" );
         for (PartialState ps : parents) {
             sb.append(ps).append(" ");
         }
+        
         sb.append("]");
         return sb.toString();
     }

@@ -98,6 +98,8 @@ public class E3DBN {
 	// This is the absorbing state which represents all unvisited states
 	private List<PartialState> dummyState;
 
+	private Map<Integer, List<Integer>> connections;
+
 	public enum SimulatorState {
 		Frozen, UnFrozen
 	}
@@ -123,9 +125,9 @@ public class E3DBN {
 
 		String edges = taskspec.getExtraString();
 
-        Map<Integer, List<Integer>> connections = Graph.graphFromString(edges);
-        System.out.println(edges);
-        System.out.println(connections);
+		connections = Graph.graphFromString(edges);
+		System.out.println(edges);
+		System.out.println(connections);
 
 		allActions = new AllActions();
 		ptpl = new PartialTransitionProbabilityLogger(connections,
@@ -175,14 +177,15 @@ public class E3DBN {
 			for (int i = 0; i < intList.size(); i++) {
 				o.intArray[i] = intList.get(i);
 			}
-			
+
 			List<PartialState> state = Reach.allReaches(o, E3Agent.NBR_REACHES,
 					E3Agent.HABITATS_PER_REACHES);
 			allStates.add(state);
-			
+
 		}
 
 	}
+	private Map<Integer, Map<ParentValues, Integer>> partialPolicies;
 
 	// Picking the next action {{{
 	/**
@@ -218,19 +221,22 @@ public class E3DBN {
 			// Start exploitation/exploration (the second condition is there
 			// to deal with states becoming known while expl*ing.)
 			if (currentTime == 0 || currentPolicy.get(state) == null) {
-				if (prevExplorationKnownCount < ptpl.knownCount || 
-						prevExplorationPolicy == null || 
-						prevExplorationPolicy.get(state) == null) {
-						
+				if (prevExplorationKnownCount < ptpl.knownCount
+						|| prevExplorationPolicy == null
+						|| prevExplorationPolicy.get(state) == null) {
+
 					currentPolicy = findExplorationPolicy();
+					//partialPolicies = findPartialPolicies(true);
 					prevExplorationPolicy = currentPolicy;
 					prevExplorationKnownCount = ptpl.knownCount;
 				} else {
 					currentPolicy = prevExplorationPolicy;
 				}
-				policy = "exploration";
-				chanceToExplore = chanceToExplore(currentPolicy, state);
 				
+				policy = "exploration";
+				//chanceToExplore = chanceToExplorePartial(partialPolicies, state);
+				chanceToExplore = chanceToExplore(currentPolicy, state);
+
 				// Should we really explore?
 				if (chanceToExplore < exploreThreshold) {
 					policy = "exploitation";
@@ -252,7 +258,9 @@ public class E3DBN {
 			 * a.intArray[0] = 1; a.intArray[1] = 1; a.intArray[2] = 1;
 			 * a.intArray[3] = 1; return a; }
 			 */
-
+//			if (policy.equals("exploration")) {
+//				actionFromPartialPolicy(partialPolicies, state);
+//			}
 			return currentPolicy.get(state);
 		}
 	}
@@ -293,6 +301,41 @@ public class E3DBN {
 		 * return balancingAction;
 		 */
 	}
+	
+	private double chanceToExplorePartial( Map<Integer, Map<ParentValues, Integer>> PartialPolicies, List<PartialState> currentState) {
+		//Find by simulation
+		final int maxIterations = 400;
+		Random r = new Random();
+		ParentValues[] pvs = new ParentValues[currentState.size()];
+		for(int i = 0; i < currentState.size(); i++) {
+			pvs[i] = new ParentValues(currentState, connections.get(i));
+		}
+		int exploredCount = 0;
+		for(int iteration = 0; iteration < maxIterations; iteration++) {
+			List<PartialState> nextState = new ArrayList<>(currentState.size()); 
+			for(int step = 0; step < horizonTime; step++) {
+				for(int stateIndex = 0; stateIndex < currentState.size(); stateIndex++) {
+					double roll = r.nextDouble();
+					double acc = 0;
+
+					for(PartialState ps : Reach.allPartials(allStates)) {
+						acc += ptpl.getProbability(stateIndex, pvs[stateIndex],
+								partialPolicies.get(stateIndex).get(pvs[stateIndex])
+								, ps);
+						if (acc > roll) {
+							nextState.add(ps);
+							break;
+						}
+					}
+				
+				}
+			}
+			if (ptpl.isKnown(nextState)) {
+				exploredCount++;
+			}
+		}
+		return exploredCount / maxIterations;
+	}
 
 	/**
 	 * Should we explore given some policy?
@@ -313,7 +356,6 @@ public class E3DBN {
 				probs.put(state, 1.0);
 			}
 		}
-
 
 		// Find probability that we end up in an unknown state in horizonTime
 		// steps
@@ -389,14 +431,14 @@ public class E3DBN {
 		setReward(dummyState, explorationPolicy ? maxReward : 0);
 
 		prevVf = new HashMap<>(vf);
-		
+
 		for (long t = 0; t < horizonTime; t++) {
 			for (List<PartialState> state : vf.keySet()) {
 				double bestValue = Double.NEGATIVE_INFINITY;
 				Action bestAction = null;
 
 				if (state.equals(dummyState)) {
-					vf.put(state, getReward(state) + discount * vf.get(state));
+					vf.put(state, getReward(state) + discount * prevVf.get(state));
 
 					continue;
 				}
@@ -430,9 +472,130 @@ public class E3DBN {
 						+ discount * bestValue);
 				policy.put(state, bestAction);
 			}
-		    prevVf = vf;
+			prevVf = vf;
 		}
 		return policy;
+	}
+
+	private Map<Integer, Map<ParentValues, Integer>> foundPartialPolicies = new HashMap<>();
+	private Map<Integer, Map<PartialState, Map<PartialState, Double>>> 
+		markovs = new HashMap<>();
+	
+	public Map<Integer, Map<ParentValues, Integer>> findPartialPolicies(boolean findExplorationPolicy) {
+		foundPartialPolicies.clear();
+		markovs.clear();
+		for(int i = 0; i < E3Agent.NBR_REACHES; i++) {
+			findPartialPolicy(i, findExplorationPolicy);
+		}
+		return foundPartialPolicies;
+	}
+	
+	public Action actionFromPartialPolicy(Map<Integer, Map<ParentValues, Integer>> partialPolicies, List<PartialState> state) {
+		Action action = new Action(state.size(), 0);
+		for(int i = 0; i < state.size(); i++) {		
+			int partialAction = partialPolicies.get(i).get(
+					new ParentValues(state, connections.get(i)));
+			action.intArray[i] = partialAction;
+		}
+		return action;
+		
+	}
+	
+	private void findPartialPolicy(int stateIndex, boolean findExplorationPolicy) {
+		
+		Map<ParentValues, Double> vf = new HashMap<>();
+		Map<ParentValues, Double> prevVf = new HashMap<>();
+		
+		Map<ParentValues, Integer> policy= new HashMap<>();
+		Map<PartialState, Map<PartialState, Double>> transProbs = new HashMap<>();
+		
+	
+		//Find policies of parents first
+		for(Integer i : connections.get(stateIndex)) {
+			if (foundPartialPolicies.get(i) == null && i != stateIndex) {
+				findPartialPolicy(i, findExplorationPolicy);
+			}
+		}
+		for (ParentValues pv : ptpl.knownPartialStates.get(
+				connections.get(stateIndex).size()).keySet()) {
+			int knownSize = ptpl.knownPartialStates.get(connections.get(stateIndex).size()).get(pv).size();
+			int allSize = pv.getSelfParent().possibleActions().size();
+			//if all actions from the state have known transitions, put in this list
+			if (knownSize ==  allSize) {
+				vf.put(pv, 0.0);
+			}
+		}
+		ParentValues dummy = new ParentValues(null, new ArrayList<Integer>());
+		vf.put(dummy, findExplorationPolicy ? maxReward : 0);
+		prevVf = new HashMap<>(vf);				
+		for (int t = 0; t < horizonTime; t++) {
+			for (ParentValues pv : vf.keySet()) {
+				double bestValue = Double.NEGATIVE_INFINITY;
+				int bestAction = 0;
+
+				if (pv.equals(dummy)) {
+					vf.put(dummy, (findExplorationPolicy ? maxReward : 0) + 
+							discount * prevVf.get(dummy));
+					continue;
+				}
+				
+				for (int action : pv.getSelfParent().possibleActions()) {
+					double currentValue = 0;
+					Map<PartialState,Double> transProb = new HashMap<>();
+					for (ParentValues nextState : Reach.allParentValues(allStates, connections.get(stateIndex))) {
+						double thisProb = 1.0;
+						int i = 0;
+						for (PartialState ps : nextState.getParents()) {
+							if (ps == nextState.getSelfParent()) {
+								thisProb *= ptpl.getProbability(stateIndex, pv, action, ps);
+								i++;
+							} else {
+								Map<PartialState, Map<PartialState, Double>> map =
+										markovs.get(connections.get(stateIndex).get(i));
+								PartialState a = pv.getParent(nextState.getParents().indexOf(ps));
+								Map<PartialState, Double> map2 = map.get(a);
+								if (markovs.get(connections.get(stateIndex).get(i)).
+										get(pv.
+												getParent(nextState.getParents().
+												indexOf(ps))) == null)  {
+									//thisProb = 0;
+								} else {
+									thisProb *= 
+										markovs.get(connections.get(stateIndex).get(i++)).
+										get(pv.
+												getParent(nextState.getParents().
+												indexOf(ps))).
+										get(ps);
+								}
+								
+							}
+						}
+						Double oldval = transProb.get(nextState.getSelfParent());
+						oldval = oldval == null ? 0 : oldval;
+						transProb.put(nextState.getSelfParent(), oldval + thisProb);
+
+						if (vf.keySet().contains(nextState)) {
+							currentValue += thisProb * prevVf.get(nextState);
+						} else {
+							currentValue += thisProb * prevVf.get(dummy);
+						}
+					}
+					if (currentValue > bestValue) {
+						transProbs.put(pv.getSelfParent(), transProb);
+						bestValue = currentValue;
+						bestAction = action;
+
+					}
+				}
+				vf.put(pv, (findExplorationPolicy) ? 0 : pv.getSelfParent().getCost(bestAction)
+						+ discount * bestValue);
+				policy.put(pv, bestAction);
+			}
+			prevVf = vf;
+		}		
+		markovs.put(stateIndex,transProbs);
+		foundPartialPolicies.put(stateIndex, policy);
+		
 	}
 
 	// }}}
@@ -453,7 +616,6 @@ public class E3DBN {
 		// Update reward table
 		updateReward(from, reward);
 
-		
 		ptpl.record(from, action, to);
 	}
 
@@ -499,6 +661,11 @@ public class E3DBN {
 	}
 
 	private double getReward(List<PartialState> state) {
+		//TODO: "unknown" state. Not observed, but all partial transitions are known
+		if (rewards.get(state) == null)
+		{
+			return 0;
+		}
 		return rewards.get(state);
 	}
 

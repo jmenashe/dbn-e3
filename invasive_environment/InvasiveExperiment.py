@@ -92,6 +92,7 @@ def single_evaluation():
 
 RLGlue.RL_init()
 print "Telling the environment to use fixed start state."
+<<<<<<< HEAD
 
 rand = random.Random(1) # Use same state each time
 startingState = array([rand.randint(1, 3) for i in xrange(REACHES * HABITATS)])
@@ -102,6 +103,15 @@ print startingState
 
 RLGlue.RL_env_message("set-start-state "+startingState)
 
+=======
+nbrReaches=REACHES
+habitatSize=HABITATS
+S = array([random.randint(1, 3) for i in xrange(nbrReaches * habitatSize)])
+#S=array([1,1,2, 1, 3, 3, 1][0:nbrReaches * habitatSize])
+S = ",".join(map(str, S))
+print S
+RLGlue.RL_env_message("set-start-state "+S)
+>>>>>>> so much stuff
 RLGlue.RL_start()
 
 print "Starting offline demo\n----------------------------\nWill alternate learning for 10 episodes, then freeze policy and evaluate for 10 episodes.\n"

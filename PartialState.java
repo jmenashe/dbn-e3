@@ -8,4 +8,5 @@ public interface PartialState {
     public int[] toIntarray(List<PartialState> state);
     public int getState(int i);
     public double getCost(int action);
+    public int getIndex();
 }

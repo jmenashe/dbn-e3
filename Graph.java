@@ -14,7 +14,8 @@ public class Graph {
             tos = new ArrayList<>();
             edges.put(from, tos);
         }
-
+        // Make sure this stays at the end of the list. The position is used to
+        // know which of the parents is the "self" node
         tos.add(to);
     }
 
