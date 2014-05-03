@@ -201,14 +201,13 @@ public class Reach implements PartialState {
 		return allPartials;
 	}
 
-	private static Map<Integer, Set<ParentValues>> allParentValuesCache = new HashMap<>();
+	private static Map<List<Integer>, Set<ParentValues>> allParentValuesCache = new HashMap<>();
 
 	public static Set<ParentValues> allParentValues(
 			Set<List<PartialState>> allStates, List<Integer> parentIndices) {
 
-		int parentCount = parentIndices.size();
-		if (allParentValuesCache.get(parentCount) != null) {
-//			return allParentValuesCache.get(parentCount);
+		if (allParentValuesCache.get(parentIndices) != null) {
+			return allParentValuesCache.get(parentIndices);
 		}
 
 		Set<ParentValues> pvs = new HashSet<ParentValues>();
@@ -216,7 +215,7 @@ public class Reach implements PartialState {
 			ParentValues pv = new ParentValues(state, parentIndices);
 			pvs.add(pv);
 		}
-		//allParentValuesCache.put(parentCount,pvs);
+		allParentValuesCache.put(parentIndices,pvs);
 		return pvs;
 	}
 }

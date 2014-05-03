@@ -18,8 +18,8 @@ import rlglue.RLGlue as RLGlue
 from datetime import datetime
 import os
 
-REACHES=3
-HABITATS=3
+REACHES=7
+HABITATS=2
 
 RESULTS_DIR = "invasive_results"
 
