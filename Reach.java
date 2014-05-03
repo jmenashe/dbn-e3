@@ -42,9 +42,13 @@ public class Reach implements PartialState {
 			}
 		}
 	}
+	
+	private double maxReward() {
+		return 11.6 + 0.9*habitats;
+	}
 
 	@Override
-	public double getCost(int action) {
+	public double getReward(int action) {
 		double cost = 0;
 
 		if (tamarisk != 0) {
@@ -67,7 +71,7 @@ public class Reach implements PartialState {
 			return cost;
 		}
 
-		return cost;
+		return maxReward() - cost;
 	}
 
 	@Override
