@@ -90,6 +90,12 @@ public class E3DBN {
 	private Map<List<PartialState>, Action> prevExplorationPolicy;
 	private Map<List<PartialState>, Action> prevExploitationPolicy;
 
+	// Current Partial policy
+	private Map<Integer, Map<ParentValues, Integer>> currentPartialPolicies;
+	private Map<Integer, Map<ParentValues, Integer>> prevExplorationPartialPolicies;
+	private Map<Integer, Map<ParentValues, Integer>> prevExploitationPartialPolicies;
+
+	
 	// Current time we have expl*
 	private long currentTime;
 
@@ -185,7 +191,6 @@ public class E3DBN {
 		}
 
 	}
-	private Map<Integer, Map<ParentValues, Integer>> partialPolicies;
 
 	// Picking the next action {{{
 	/**
@@ -196,7 +201,7 @@ public class E3DBN {
 		if (simulatorState == SimulatorState.Frozen) {
 			if (ptpl.isKnown(state)) {
 				policy = "frozen policy";
-				return currentPolicy.get(state);
+				return actionFromPartialPolicy(currentPartialPolicies, state);
 			} else {
 				policy = "frozen balancing";
 				return balancedWandering(state);
@@ -220,29 +225,33 @@ public class E3DBN {
 
 			// Start exploitation/exploration (the second condition is there
 			// to deal with states becoming known while expl*ing.)
-			if (currentTime == 0 || currentPolicy.get(state) == null) {
+			if (currentTime == 0 /*|| currentPolicy.get(state) == null*/) {
 				if (prevExplorationKnownCount < ptpl.knownCount
-						|| prevExplorationPolicy == null
-						|| prevExplorationPolicy.get(state) == null) {
+						/*|| prevExplorationPolicy == null
+						|| prevExplorationPolicy.get(state) == null*/) {
 
-					currentPolicy = findExplorationPolicy();
-					//partialPolicies = findPartialPolicies(true);
-					prevExplorationPolicy = currentPolicy;
+					//currentPolicy = findExplorationPolicy();
+					currentPartialPolicies = findPartialPolicies(true);
+					prevExplorationPartialPolicies = currentPartialPolicies;
+					/*prevExplorationPolicy = currentPolicy;*/
 					prevExplorationKnownCount = ptpl.knownCount;
 				} else {
-					currentPolicy = prevExplorationPolicy;
+					currentPartialPolicies = prevExplorationPartialPolicies;
+					/*currentPolicy = prevExplorationPolicy;*/
 				}
 				
 				policy = "exploration";
-				//chanceToExplore = chanceToExplorePartial(partialPolicies, state);
-				chanceToExplore = chanceToExplore(currentPolicy, state);
+				chanceToExplore = chanceToExplorePartial(currentPartialPolicies, state);
+				//chanceToExplore = chanceToExplore(currentPolicy, state);
 
 				// Should we really explore?
 				if (chanceToExplore < exploreThreshold) {
 					policy = "exploitation";
 					if (prevExploitationKnownCount < ptpl.knownCount) {
-						currentPolicy = findExploitationPolicy();
-						prevExploitationPolicy = currentPolicy;
+						currentPartialPolicies = findPartialPolicies(false);
+						/*currentPolicy = findExploitationPolicy();*/
+						prevExploitationPartialPolicies = currentPartialPolicies;
+						/*prevExploitationPolicy = currentPolicy;*/
 						prevExploitationKnownCount = ptpl.knownCount;
 					} else {
 						currentPolicy = prevExploitationPolicy;
@@ -258,9 +267,9 @@ public class E3DBN {
 			 * a.intArray[0] = 1; a.intArray[1] = 1; a.intArray[2] = 1;
 			 * a.intArray[3] = 1; return a; }
 			 */
-//			if (policy.equals("exploration")) {
-//				actionFromPartialPolicy(partialPolicies, state);
-//			}
+			if (true) {
+				return actionFromPartialPolicy(currentPartialPolicies, state);
+			}
 			return currentPolicy.get(state);
 		}
 	}
@@ -312,15 +321,15 @@ public class E3DBN {
 		}
 		int exploredCount = 0;
 		for(int iteration = 0; iteration < maxIterations; iteration++) {
-			List<PartialState> nextState = new ArrayList<>(currentState.size()); 
 			for(int step = 0; step < horizonTime; step++) {
+				List<PartialState> nextState = new ArrayList<>(currentState.size()); 
 				for(int stateIndex = 0; stateIndex < currentState.size(); stateIndex++) {
 					double roll = r.nextDouble();
 					double acc = 0;
 
 					for(PartialState ps : Reach.allPartials(allStates)) {
 						acc += ptpl.getProbability(stateIndex, pvs[stateIndex],
-								partialPolicies.get(stateIndex).get(pvs[stateIndex])
+								currentPartialPolicies.get(stateIndex).get(pvs[stateIndex])
 								, ps);
 						if (acc > roll) {
 							nextState.add(ps);
@@ -329,12 +338,13 @@ public class E3DBN {
 					}
 				
 				}
-			}
-			if (ptpl.isKnown(nextState)) {
-				exploredCount++;
+				if (!ptpl.isKnown(nextState)) {
+					exploredCount++;
+					break;
+				}
 			}
 		}
-		return exploredCount / maxIterations;
+		return exploredCount / (double)maxIterations;
 	}
 
 	/**
@@ -482,8 +492,13 @@ public class E3DBN {
 		markovs = new HashMap<>();
 	
 	public Map<Integer, Map<ParentValues, Integer>> findPartialPolicies(boolean findExplorationPolicy) {
+		
+		
 		foundPartialPolicies.clear();
-		markovs.clear();
+		//This happens when the experiment calls for a frozen policy at the start
+		if (ptpl.knownCount == 0) {
+			return foundPartialPolicies;
+		}markovs.clear();
 		for(int i = 0; i < E3Agent.NBR_REACHES; i++) {
 			findPartialPolicy(i, findExplorationPolicy);
 		}
@@ -502,6 +517,7 @@ public class E3DBN {
 	}
 	
 	private void findPartialPolicy(int stateIndex, boolean findExplorationPolicy) {
+		
 		
 		Map<ParentValues, Double> vf = new HashMap<>();
 		Map<ParentValues, Double> prevVf = new HashMap<>();
@@ -587,7 +603,8 @@ public class E3DBN {
 
 					}
 				}
-				vf.put(pv, (findExplorationPolicy) ? 0 : pv.getSelfParent().getCost(bestAction)
+				double d = pv.getSelfParent().getReward(bestAction);
+				vf.put(pv, ((findExplorationPolicy) ? 0 : d)
 						+ discount * bestValue);
 				policy.put(pv, bestAction);
 			}
@@ -692,7 +709,8 @@ public class E3DBN {
 	public void freezePolicy() {
 		System.out.println("Freezing");
 		this.simulatorState = SimulatorState.Frozen;
-		currentPolicy = findExploitationPolicy();
+		currentPartialPolicies = findPartialPolicies(false);
+		//currentPolicy = findExploitationPolicy();
 	}
 
 	public void unFreezePolicy() {

@@ -18,7 +18,6 @@ from rlglue.types import Reward_observation_terminal
 import numpy as np
 from networkx import adjacency_matrix
 
-
 REACHES=3
 HABITATS=3
 
