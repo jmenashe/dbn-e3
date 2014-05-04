@@ -19,7 +19,7 @@ from datetime import datetime
 import os
 
 REACHES=4
-HABITATS=3
+HABITATS=7
 
 RESULTS_DIR = "invasive_results"
 

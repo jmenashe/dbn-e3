@@ -193,16 +193,16 @@ public class Reach implements PartialState {
 
 
 
-	private static Set<PartialState> allPartials = null;
+	private static Set<PartialState> allPartialsCache = null;
 	public static Set<PartialState> allPartials(int reachSize) {
-		if (allPartials != null) {
-			return allPartials;
+		if (allPartialsCache != null) {
+			return allPartialsCache;
 		}
 		int reachCount = 1;
 		for(int i = 0; i < reachSize; i++) {
 			reachCount *= 3;
 		}
-		Set<PartialState> allPartials = new HashSet<>(); 
+		 allPartialsCache = new HashSet<>(); 
 		for(int i = 0; i < reachCount; i++) {
 			int iCpy = i;
 			Observation o = new Observation(reachSize, 0);
@@ -211,19 +211,17 @@ public class Reach implements PartialState {
 				iCpy /= 3;
 			}
 			
-			allPartials.add(new Reach(o, 0, reachSize));
+			allPartialsCache.add(new Reach(o, 0, reachSize));
 		}
 		
-		return allPartials;
+		return allPartialsCache;
 	}
 	
-
 	private static Map<List<Integer>, Set<ParentValues>> allParentValuesCache = new HashMap<>();
-	private static Map<List<Integer>, Set<ParentValues>> allParentValuesCache2 = new HashMap<>();
 	public static Set<ParentValues> allParentValues(int reachSize, int reachCount, List<Integer> parentIndices) {
 		Set<ParentValues> pvs = new HashSet<ParentValues>();
-		if (allParentValuesCache2.get(parentIndices) != null) {
-			return allParentValuesCache2.get(parentIndices);
+		if (allParentValuesCache.get(parentIndices) != null) {
+			return allParentValuesCache.get(parentIndices);
 		}
 		List<PartialState> partials = new ArrayList<>();; //= new ArrayList<PartialState>( allPartials(reachSize));
 		for(PartialState ps : allPartials(reachSize)) {
@@ -249,25 +247,10 @@ public class Reach implements PartialState {
 			pvs.add(new ParentValues(tempState, parentIndices));
 			
 		}
-		//allParentValuesCache2.put(parentIndices, pvs);
+		allParentValuesCache.put(parentIndices, pvs);
 		return pvs;
 	}
 	
-	public static Set<ParentValues> allParentValues(
-			Set<List<PartialState>> allStates, List<Integer> parentIndices) {
-
-		if (allParentValuesCache.get(parentIndices) != null) {
-			return allParentValuesCache.get(parentIndices);
-		}
-
-		Set<ParentValues> pvs = new HashSet<ParentValues>();
-		for (List<PartialState> state : allStates) {
-			ParentValues pv = new ParentValues(state, parentIndices);
-			pvs.add(pv);
-		}
-		allParentValuesCache.put(parentIndices,pvs);
-		return pvs;
-	}
 
 	@Override
 	public void setReachNr(int nr) {

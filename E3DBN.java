@@ -1,8 +1,6 @@
 import org.rlcommunity.rlglue.codec.taskspec.TaskSpec;
 import org.rlcommunity.rlglue.codec.types.Action;
-import org.rlcommunity.rlglue.codec.types.Observation;
 
-import java.security.Policy;
 import java.util.*;
 
 /**
@@ -85,11 +83,6 @@ public class E3DBN {
 	// State -> Reward
 	private Map<List<PartialState>, Double> rewards;
 
-	// Current policy
-	private Map<List<PartialState>, Action> currentPolicy;
-	private Map<List<PartialState>, Action> prevExplorationPolicy;
-	private Map<List<PartialState>, Action> prevExploitationPolicy;
-
 	// Current Partial policy
 	private Map<Integer, Map<ParentValues, Integer>> currentPartialPolicies;
 	private Map<Integer, Map<ParentValues, Integer>> prevExplorationPartialPolicies;
@@ -99,10 +92,6 @@ public class E3DBN {
 	// Current time we have expl*
 	private long currentTime;
 
-	private Set<List<PartialState>> allStates;
-
-	// This is the absorbing state which represents all unvisited states
-	private List<PartialState> dummyState;
 
 	private Map<Integer, List<Integer>> connections;
 
@@ -121,11 +110,9 @@ public class E3DBN {
 	 *            the maximum possible reward
 	 * @param taskspec
 	 *            the taskspec
-	 * @param dummyState
-	 *            representation of the absorbing dummystate
 	 */
 	public E3DBN(double discount, double eps, double maxReward,
-			TaskSpec taskspec, List<PartialState> dummyState) {
+			TaskSpec taskspec) {
 
 		stateVisits = new HashMap<>();
 
@@ -141,56 +128,12 @@ public class E3DBN {
 
 		rewards = new HashMap<>();
 
-		allStates = new HashSet<>();
-		computeAllStates();
-		// This is the absorbing state which represents all unvisited states
-		this.dummyState = dummyState;
-
 		this.maxReward = maxReward;
 
 		this.discount = discount;
 		horizonTime = Math.round((1 / (1 - discount)));
 	}
 
-	/*
-	 * private Map<Integer, List<Integer>> parseConnectionsMessage( String
-	 * responseMessage) { Map<Integer, List<Integer>> returnMap = new
-	 * HashMap<>(); String[] connections = responseMessage.split(":"); for (int
-	 * i = 0; i < connections.length; i++) { List<Integer> list = new
-	 * ArrayList<Integer>(); for (String nr : connections[i].split("\\s+")) {
-	 * int a = Integer.parseInt(nr); list.add(a); } returnMap.put(i, list); }
-	 * return returnMap; }
-	 */
-
-	public Set<List<PartialState>> getAllStates() {
-		return allStates;
-	}
-
-	private void computeAllStates() {
-		int habitatCount = E3Agent.HABITATS_PER_REACHES * E3Agent.NBR_REACHES;
-		System.out.println(habitatCount);
-		List<List<Integer>> possibleStates = new ArrayList<>(habitatCount);
-		for (int i = 0; i < habitatCount; i++) {
-			List<Integer> inner = new ArrayList<>(3);
-			possibleStates.add(inner);
-			for (int j = 1; j <= 3; j++) {
-				inner.add(j);
-			}
-		}
-		System.out.println(possibleStates);
-		for (List<Integer> intList : allCombinations(possibleStates)) {
-			Observation o = new Observation(habitatCount, 0);
-			for (int i = 0; i < intList.size(); i++) {
-				o.intArray[i] = intList.get(i);
-			}
-
-			List<PartialState> state = Reach.allReaches(o, E3Agent.NBR_REACHES,
-					E3Agent.HABITATS_PER_REACHES);
-			allStates.add(state);
-
-		}
-
-	}
 
 	// Picking the next action {{{
 	/**
@@ -211,7 +154,7 @@ public class E3DBN {
 			// Unknown state
 			if (!ptpl.isKnown(state)) {
 				policy = "balancing";
-				currentPolicy = null;
+				currentPartialPolicies = null;
 				currentTime = 0;
 				balancingCount++;
 				return balancedWandering(state);
@@ -219,42 +162,34 @@ public class E3DBN {
 
 			// If expl* long enough: balanced wandering
 			if (currentTime >= horizonTime) {
-				currentPolicy = null;
+				currentPartialPolicies = null;
 				currentTime = 0;
 			}
 
 			// Start exploitation/exploration (the second condition is there
 			// to deal with states becoming known while expl*ing.)
-			if (currentTime == 0 /*|| currentPolicy.get(state) == null*/) {
-				if (prevExplorationKnownCount < ptpl.knownCount
-						/*|| prevExplorationPolicy == null
-						|| prevExplorationPolicy.get(state) == null*/) {
+			if (currentTime == 0) {
+				if (prevExplorationKnownCount < ptpl.knownCount) {
 
-					//currentPolicy = findExplorationPolicy();
 					currentPartialPolicies = findPartialPolicies(true);
 					prevExplorationPartialPolicies = currentPartialPolicies;
-					/*prevExplorationPolicy = currentPolicy;*/
 					prevExplorationKnownCount = ptpl.knownCount;
 				} else {
 					currentPartialPolicies = prevExplorationPartialPolicies;
-					/*currentPolicy = prevExplorationPolicy;*/
 				}
 				
 				policy = "exploration";
 				chanceToExplore = chanceToExplorePartial(currentPartialPolicies, state);
-				//chanceToExplore = chanceToExplore(currentPolicy, state);
 
 				// Should we really explore?
 				if (chanceToExplore < exploreThreshold) {
 					policy = "exploitation";
 					if (prevExploitationKnownCount < ptpl.knownCount) {
 						currentPartialPolicies = findPartialPolicies(false);
-						/*currentPolicy = findExploitationPolicy();*/
 						prevExploitationPartialPolicies = currentPartialPolicies;
-						/*prevExploitationPolicy = currentPolicy;*/
 						prevExploitationKnownCount = ptpl.knownCount;
 					} else {
-						currentPolicy = prevExploitationPolicy;
+						currentPartialPolicies = prevExploitationPartialPolicies;
 					}
 				}
 
@@ -262,15 +197,8 @@ public class E3DBN {
 
 			currentTime++;
 
-			/*
-			 * if (policy.equals("exploration")) { Action a = new Action(4,0);
-			 * a.intArray[0] = 1; a.intArray[1] = 1; a.intArray[2] = 1;
-			 * a.intArray[3] = 1; return a; }
-			 */
-			if (true) {
-				return actionFromPartialPolicy(currentPartialPolicies, state);
-			}
-			return currentPolicy.get(state);
+			return actionFromPartialPolicy(currentPartialPolicies, state);
+
 		}
 	}
 
@@ -298,17 +226,6 @@ public class E3DBN {
 		}
 
 		return action;
-		/*
-		 * Action balancingAction = null; int lowest = Integer.MAX_VALUE; for
-		 * (Action action : allActions.getAllActions(state)) { if
-		 * (balancingAction == null) { lowest =
-		 * ptpl.getSmallestPartialStateActionVisitCount(action, state);
-		 * balancingAction = action; continue; } int temp =
-		 * ptpl.getSmallestPartialStateActionVisitCount(action, state); if (temp
-		 * < lowest) { lowest = temp; balancingAction = action; } }
-		 * 
-		 * return balancingAction;
-		 */
 	}
 	
 	private double chanceToExplorePartial( Map<Integer, Map<ParentValues, Integer>> PartialPolicies, List<PartialState> currentState) {
@@ -345,148 +262,8 @@ public class E3DBN {
 				}
 			}
 		}
+
 		return exploredCount / (double)maxIterations;
-	}
-
-	/**
-	 * Should we explore given some policy?
-	 */
-	/*
-	private double chanceToExplore(
-			Map<List<PartialState>, Action> explorationPolicy,
-			List<PartialState> currentState) {
-		Map<List<PartialState>, Double> probs = new HashMap<>();
-
-		if (!ptpl.isKnown(currentState))
-			throw new ArithmeticException();
-
-		// Starting probabilities are 0 for known states and 1 for unknown
-		for (List<PartialState> state : getAllStates()) {
-			if (ptpl.isKnown(state)) {
-				probs.put(state, 0.0);
-			} else {
-				probs.put(state, 1.0);
-			}
-		}
-
-		// Find probability that we end up in an unknown state in horizonTime
-		// steps
-		for (long i = 0; i < horizonTime; i++) {
-			for (List<PartialState> state : ptpl.getObservedStates()) {
-				if (ptpl.isKnown(state)) {
-					double probability = 0;
-
-					// For all possible transitions, multiply transition
-					// probability by the stored value for the target state.
-					List<List<PartialState>> nextStates = ptpl
-							.statesFromPartialStates(state,
-									explorationPolicy.get(state));
-					// System.out.println("state: " + state + " nextstates: " +
-					// nextStates);
-					for (List<PartialState> nextState : nextStates) {
-						Double d = probs.get(nextState);
-						d = d == null ? 1 : d;
-						probability += d
-								* ptpl.getProbability(state,
-										explorationPolicy.get(state), nextState);
-					}
-					probs.put(state, probability);
-				}
-			}
-		}
-
-		// TODO: 0.05 should be epsilon / (2 * G^T_max) (see paper, section 6)
-		chanceToExplore = probs.get(currentState);
-
-		return chanceToExplore;
-	}*/
-
-	// }}}
-
-	// Policy calculations {{{
-
-	/**
-	 * Performs value iteration in to find a policy that explores new states
-	 * within horizonTime
-	 */
-	private Map<List<PartialState>, Action> findExplorationPolicy() {
-		return findPolicy(true);
-	}
-
-	/**
-	 * Performs value iteration in to find a policy that exploits new states
-	 * within horizonTime
-	 */
-	private Map<List<PartialState>, Action> findExploitationPolicy() {
-		return findPolicy(false);
-	}
-
-	private Map<List<PartialState>, Action> findPolicy(boolean explorationPolicy) {
-		if (explorationPolicy) {
-			ptpl.clearProbCache();
-		}
-		// Value function
-		Map<List<PartialState>, Double> vf = new HashMap<>();
-		Map<List<PartialState>, Double> prevVf;
-
-		// Policy
-		Map<List<PartialState>, Action> policy = new HashMap<>();
-
-		// Initialize value function
-		for (List<PartialState> state : ptpl.getObservedStates()) {
-			if (ptpl.isKnown(state)) {
-				vf.put(state, 0.0);
-			}
-		}
-
-		vf.put(dummyState, 0.0);
-		setReward(dummyState, explorationPolicy ? maxReward : 0);
-
-		prevVf = new HashMap<>(vf);
-
-		for (long t = 0; t < horizonTime; t++) {
-			for (List<PartialState> state : vf.keySet()) {
-				double bestValue = Double.NEGATIVE_INFINITY;
-				Action bestAction = null;
-
-				if (state.equals(dummyState)) {
-					vf.put(state, getReward(state) + discount * prevVf.get(state));
-
-					continue;
-				}
-
-				for (Action action : allActions.getAllActions(state)) {
-					double currentValue = 0;
-					double totalProb = 0;
-					for (List<PartialState> nextState : allStates) {
-						double thisProb = ptpl.getProbability(state, action,
-								nextState);
-						totalProb += thisProb;
-						if (vf.keySet().contains(nextState)) {
-
-							currentValue += thisProb * prevVf.get(nextState);
-						} else {
-							currentValue += thisProb * prevVf.get(dummyState);
-						}
-					}
-					if ((totalProb > 1.1 || totalProb < 0.9) && totalProb != 0) {
-						System.out.println("hej " + totalProb);
-						throw new ArithmeticException();
-
-					}
-					if (currentValue > bestValue) {
-						bestValue = currentValue;
-						bestAction = action;
-					}
-				}
-
-				vf.put(state, (explorationPolicy) ? 0 : getReward(state)
-						+ discount * bestValue);
-				policy.put(state, bestAction);
-			}
-			prevVf = vf;
-		}
-		return policy;
 	}
 
 	private Map<Integer, Map<ParentValues, Integer>> foundPartialPolicies = new HashMap<>();
@@ -560,7 +337,6 @@ public class E3DBN {
 				for (int action : pv.getSelfParent().possibleActions()) {
 					double currentValue = 0;
 					Map<PartialState,Double> transProb = new HashMap<>();
-					Set<ParentValues> set2 = Reach.allParentValues(allStates, connections.get(stateIndex));
 					Set<ParentValues> set = Reach.allParentValues(E3Agent.HABITATS_PER_REACHES, 
 							E3Agent.NBR_REACHES, connections.get(stateIndex));
 					

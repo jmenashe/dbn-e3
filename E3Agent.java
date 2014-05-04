@@ -13,7 +13,7 @@ import java.util.List;
 public class E3Agent implements AgentInterface {
 
     public static final int NBR_REACHES = 4;
-    public static final int HABITATS_PER_REACHES = 3;
+    public static final int HABITATS_PER_REACHES = 7;
 
     private E3DBN e3;
 
@@ -36,38 +36,8 @@ public class E3Agent implements AgentInterface {
         e3 = new E3DBN(0.95, // Discount
                 0.90, // epsilon
                 getMaxReward(), // max reward
-                taskspec,
-                new ArrayList<PartialState>());
+                taskspec);
 
-    }
-
-
-    private List<Action> createAllActionsList(TaskSpec taskspec) {
-        int actionDims = taskspec.getNumDiscreteActionDims();
-        IntRange[] actionRanges = new IntRange[actionDims];
-        int actionCount = 1;
-        for (int i = 0; i < actionDims; i++) {
-            actionRanges[i] = taskspec.getDiscreteActionRange(i);
-            actionCount *= actionRanges[i].getMax() - actionRanges[i].getMin() + 1;
-        }
-        List<Action> allActions = new ArrayList<>(actionCount);
-        for (int i = 0; i < actionCount; i++) {
-            Action action = new Action(actionDims, 0, 0);
-            allActions.add(action);
-        }
-
-        int n = actionCount;
-        int m;
-        for (int i = 0; i < actionRanges.length; i++) {
-            int howMany = (actionRanges[i].getMax() - actionRanges[i].getMin() + 1);
-            n = n / howMany;
-            m = howMany;
-            for (int action = 0; action < actionCount; action++) {
-                allActions.get(action).intArray[i] =
-                        actionRanges[i].getMin() + (action / n) % m;
-            }
-        }
-        return allActions;
     }
 
 
