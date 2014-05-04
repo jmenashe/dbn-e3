@@ -350,21 +350,13 @@ public class E3DBN {
 								i++;
 							} else {
 								Map<PartialState, Map<PartialState, Double>> map =
-										markovs.get(connections.get(stateIndex).get(i));
+										markovs.get(connections.get(stateIndex).get(i++));
 								PartialState a = pv.getParent(nextState.getParents().indexOf(ps));
 								Map<PartialState, Double> map2 = map.get(a);
-								if (markovs.get(connections.get(stateIndex).get(i)).
-										get(pv.
-												getParent(nextState.getParents().
-												indexOf(ps))) == null)  {
+								if (map2 == null)  {
 									thisProb = 0;
 								} else {
-									thisProb *= 
-										markovs.get(connections.get(stateIndex).get(i++)).
-										get(pv.
-												getParent(nextState.getParents().
-												indexOf(ps))).
-										get(ps);
+									thisProb *= map2.get(ps);
 								}
 								
 							}
@@ -382,7 +374,7 @@ public class E3DBN {
 					}
 					if ((totalProb > 1.1 || totalProb < 0.9) && totalProb != 0.0) {
 						System.out.println("hej " + totalProb);
-						//throw new ArithmeticException("probabilities fucked up");
+						throw new ArithmeticException("probabilities in disarray");
 					}
 					if (currentValue > bestValue) {
 						transProbs.put(pv.getSelfParent(), transProb);
