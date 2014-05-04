@@ -184,20 +184,37 @@ public class PartialTransitionProbabilityLogger {
 		}
 		for (int stateIndex = 0; stateIndex < connections.size(); stateIndex++) {
 
-			ParentValues ps = new ParentValues(observedState,
+			ParentValues pv = new ParentValues(observedState,
 					connections.get(stateIndex));
+			Map<ParentValues, List<Integer>> mapz = knownPartialStates.get(
+					connections.get(stateIndex).size());
+			if (mapz == null) {
+				return false;
+			}
+			List<Integer> listz = mapz.get(pv);
+			if (listz == null)
+				return false;
+			
+			int allActionCount = observedState.get(stateIndex).possibleActions().size();
+			if (listz.size() != allActionCount)
+				return false;
+			
+			
 			for (Action action : allActionsGetter.getAllActions(observedState)) {
 				Map<ParentValues, List<Integer>> map = knownPartialStates
 						.get(connections.get(stateIndex).size());
 				if (map == null) {
-					return false;
+					throw new ArithmeticException();
+					//return false;
 				}
-				List<Integer> list = map.get(ps);
+				List<Integer> list = map.get(pv);
 				if (list == null) {
-					return false;
+					throw new ArithmeticException();
+					//return false;
 				}
 				if (!list.contains(action.intArray[stateIndex])) {
-					return false;
+					throw new ArithmeticException();
+//					return false;
 				}
 			}
 		}
