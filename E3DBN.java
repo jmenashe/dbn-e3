@@ -180,10 +180,12 @@ public class E3DBN {
 		
 		for(int iteration = 0; iteration < maxIterations; iteration++) {
 			for(int step = 0; step < horizonTime; step++) {
-				List<PartialState> nextState = new ArrayList<>(currentState.size()); 
+				List<PartialState> nextState = new ArrayList<>(currentState.size());
+				//Do a new roll for each partial state
 				for(int stateIndex = 0; stateIndex < currentState.size(); stateIndex++) {
 					double roll = r.nextDouble();
 					double acc = 0;
+					//all possible partials to end up in
 					Set<PartialState> set = Reach.allPartials(E3Agent.HABITATS_PER_REACHES);
 
 					for(PartialState ps : set) {
@@ -208,7 +210,27 @@ public class E3DBN {
 		return exploredCount / (double)maxIterations;
 	}
 
+	/**
+	 * Give this a state and a partial policy from findPartialPolicies() and it will give back 
+	 * the action to take. 
+	 */
+	public Action actionFromPartialPolicy(Map<Integer, Map<ParentValues, Integer>> partialPolicies, List<PartialState> state) {
+		Action action = new Action(state.size(), 0);
+		for(int i = 0; i < state.size(); i++) {		
+			int partialAction = partialPolicies.get(i).get(
+					new ParentValues(state, connections.get(i)));
+			action.intArray[i] = partialAction;
+		}
+		return action;
+		
+	}
+	
+	//This is mostly just an easy way to keep track of which parital states have a computed
+	//policy 
 	private Map<Integer, Map<ParentValues, Integer>> foundPartialPolicies = new HashMap<>();
+	/**
+	 * Find partial policies.  
+	 */
 	public Map<Integer, Map<ParentValues, Integer>> findPartialPolicies(boolean findExplorationPolicy) {
 		
 		
@@ -224,21 +246,10 @@ public class E3DBN {
 		return foundPartialPolicies;
 	}
 	
-	public Action actionFromPartialPolicy(Map<Integer, Map<ParentValues, Integer>> partialPolicies, List<PartialState> state) {
-		Action action = new Action(state.size(), 0);
-		for(int i = 0; i < state.size(); i++) {		
-			int partialAction = partialPolicies.get(i).get(
-					new ParentValues(state, connections.get(i)));
-			action.intArray[i] = partialAction;
-		}
-		return action;
-		
-	}
+	
 
-	private Map<Integer, Map<PartialState, Map<PartialState, Double>>> 
-	markovs = new HashMap<>();
+	private Map<Integer, Map<PartialState, Map<PartialState, Double>>> 	markovs = new HashMap<>();
 	private void findPartialPolicy(int stateIndex, boolean findExplorationPolicy) {
-		
 		
 		Map<ParentValues, Double> vf = new HashMap<>();
 		Map<ParentValues, Double> prevVf = new HashMap<>();
@@ -246,7 +257,7 @@ public class E3DBN {
 		Map<ParentValues, Integer> policy= new HashMap<>();
 
 		//This is used to form Markov chains that are in turn used to plan 
-		//states depending on the state at stateIndex
+		//states depending on the state currently being planned
 		Map<PartialState, Map<PartialState, Double>> transProbs = new HashMap<>();
 		
 		//Find policies of parents first (and turn them into Markov chains)
@@ -255,9 +266,11 @@ public class E3DBN {
 				findPartialPolicy(i, findExplorationPolicy);
 			}
 		}
-		for (ParentValues pv : ptpl.knownPartialStates.get(
+
+		//starting values for vf
+		for (ParentValues pv : ptpl.getKnownPartialStateActions().get(
 				connections.get(stateIndex).size()).keySet()) {
-			int knownSize = ptpl.knownPartialStates.get(connections.get(stateIndex).size()).get(pv).size();
+			int knownSize = ptpl.getKnownPartialStateActions().get(connections.get(stateIndex).size()).get(pv).size();
 			int allSize = pv.getSelfParent().possibleActions().size();
 			//if all actions from the state have known transitions, put in this list
 			if (knownSize ==  allSize) {
@@ -291,8 +304,8 @@ public class E3DBN {
 						int i = 0;
 						//The probability of ending up in nextState from pv when taking action 
 						//"action" is the product of all transitions for the partialState:s 
-						//that it consists of. One of these probabilities is fetched from ptpl, the others 
-						//are just markov chains. 
+						//that it consists of. One of these probabilities is fetched from ptpl, 
+						//the others are just markov chains. 
 						for (PartialState ps : nextState.getParents()) {
 							//getSelfParent returns the PartialState for which we are computing
 							//a policy. 
@@ -300,7 +313,7 @@ public class E3DBN {
 								thisProb *= ptpl.getProbability(stateIndex, pv, action, ps);
 								i++;
 							} else {
-								//This is an effin mess. Nope, no explanation. 
+								//This is an effin mess. Nope, no explanation nor even apology 
 								Map<PartialState, Map<PartialState, Double>> map =
 										markovs.get(connections.get(stateIndex).get(i++));
 								PartialState a = pv.getParent(nextState.getParents().indexOf(ps));
@@ -373,7 +386,7 @@ public class E3DBN {
 	}
 
 	public int getKnownFullCount() {
-		return ptpl.knownStates.size();
+		return ptpl.getKnownStates().size();
 	}
 
 	public int getBalancingActionCount() {

@@ -124,6 +124,9 @@ public class Reach implements PartialState {
 		Reach reach = (Reach) o;
 
 		return empty == reach.empty && plant == reach.plant
+				//This line is removed so that we can put similar reaches in the same 
+				//spot in a hashmap, the spot only depending on the number of parents rather 
+				//than reach number. 
 				//&& reachNumber == reach.reachNumber
 				&& tamarisk == reach.tamarisk;
 
@@ -138,6 +141,10 @@ public class Reach implements PartialState {
 		return result;
 	}
 
+	/**
+	 * Turn an observation from the simulator into Reaches
+	 * 
+	 */
 	public static List<PartialState> allReaches(Observation state,
 			int nReaches, int habitatsPerReach) {
 		List<PartialState> partialStates = new ArrayList<>();
@@ -223,10 +230,12 @@ public class Reach implements PartialState {
 		if (allParentValuesCache.get(parentIndices) != null) {
 			return allParentValuesCache.get(parentIndices);
 		}
-		List<PartialState> partials = new ArrayList<>();; //= new ArrayList<PartialState>( allPartials(reachSize));
+		List<PartialState> partials = new ArrayList<>(); 
 		for(PartialState ps : allPartials(reachSize)) {
 			partials.add(new Reach((Reach)ps));
 		}
+		
+		//total number of ParentValues objects to create
 		int pvCount = 1;
 		for(int i = 0; i < parentIndices.size(); i++) {
 			pvCount *= partials.size();
@@ -240,7 +249,7 @@ public class Reach implements PartialState {
 			int iCpy = i;
 			for(int j = 0; j < parentIndices.size(); j++) {
 				PartialState ps = new Reach((Reach) partials.get(iCpy % partials.size()));
-				ps.setReachNr(parentIndices.get(j));
+				ps.setStateNr(parentIndices.get(j));
 				tempState.set(parentIndices.get(j),ps);
 				iCpy /= partials.size();
 			}
@@ -253,7 +262,7 @@ public class Reach implements PartialState {
 	
 
 	@Override
-	public void setReachNr(int nr) {
+	public void setStateNr(int nr) {
 		reachNumber = nr;
 		
 	}

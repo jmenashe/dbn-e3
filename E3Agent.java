@@ -12,7 +12,7 @@ import java.util.List;
 
 public class E3Agent implements AgentInterface {
 
-    public static final int NBR_REACHES = 4;
+    public static final int NBR_REACHES = 14;
     public static final int HABITATS_PER_REACHES = 7;
 
     private E3DBN e3;

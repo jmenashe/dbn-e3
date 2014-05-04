@@ -18,7 +18,7 @@ from rlglue.types import Reward_observation_terminal
 import numpy as np
 from networkx import adjacency_matrix
 
-REACHES=4
+REACHES=14
 HABITATS=7
 
 class InvasiveEnvironment(Environment):
