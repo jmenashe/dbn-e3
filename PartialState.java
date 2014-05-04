@@ -9,4 +9,5 @@ public interface PartialState {
     public int getState(int i);
     public double getReward(int action);
     public int getIndex();
+	public void setReachNr(int nr);
 }

@@ -43,6 +43,15 @@ public class Reach implements PartialState {
 		}
 	}
 	
+	public Reach(Reach ps) {
+		
+		this.empty = ps.empty;
+		this.tamarisk = ps.tamarisk;
+		this.plant = ps.plant;
+		this.reachNumber = ps.reachNumber;
+		this.habitats = ps.habitats;		
+	}
+
 	private double maxReward() {
 		return 11.6 + 0.9*habitats;
 	}
@@ -182,27 +191,68 @@ public class Reach implements PartialState {
 		return reachNumber;
 	}
 
-	private static Set<PartialState> allPartials = null;
 
-	public static Set<PartialState> allPartials(
-			Set<List<PartialState>> allStates) {
+
+	private static Set<PartialState> allPartials = null;
+	public static Set<PartialState> allPartials(int reachSize) {
 		if (allPartials != null) {
 			return allPartials;
 		}
-
-		allPartials = new HashSet<PartialState>();
-		// This is ridiculous, but who gives a shit
-		for (List<PartialState> fullState : allStates) {
-			for (PartialState partial : fullState) {
-				allPartials.add(partial);
-			}
+		int reachCount = 1;
+		for(int i = 0; i < reachSize; i++) {
+			reachCount *= 3;
 		}
-
+		Set<PartialState> allPartials = new HashSet<>(); 
+		for(int i = 0; i < reachCount; i++) {
+			int iCpy = i;
+			Observation o = new Observation(reachSize, 0);
+			for(int j = 0; j < reachSize; j++) {
+				o.intArray[j] = (iCpy % 3) + 1;
+				iCpy /= 3;
+			}
+			
+			allPartials.add(new Reach(o, 0, reachSize));
+		}
+		
 		return allPartials;
 	}
+	
 
 	private static Map<List<Integer>, Set<ParentValues>> allParentValuesCache = new HashMap<>();
-
+	private static Map<List<Integer>, Set<ParentValues>> allParentValuesCache2 = new HashMap<>();
+	public static Set<ParentValues> allParentValues(int reachSize, int reachCount, List<Integer> parentIndices) {
+		Set<ParentValues> pvs = new HashSet<ParentValues>();
+		if (allParentValuesCache2.get(parentIndices) != null) {
+			return allParentValuesCache2.get(parentIndices);
+		}
+		List<PartialState> partials = new ArrayList<>();; //= new ArrayList<PartialState>( allPartials(reachSize));
+		for(PartialState ps : allPartials(reachSize)) {
+			partials.add(new Reach((Reach)ps));
+		}
+		int pvCount = 1;
+		for(int i = 0; i < parentIndices.size(); i++) {
+			pvCount *= partials.size();
+		}
+		
+		List<PartialState> tempState = new ArrayList<>(reachCount);
+		for(int i = 0; i < reachCount; i++) {
+			tempState.add(null);
+		}
+		for(int i = 0; i < pvCount; i++) {
+			int iCpy = i;
+			for(int j = 0; j < parentIndices.size(); j++) {
+				PartialState ps = new Reach((Reach) partials.get(iCpy % partials.size()));
+				ps.setReachNr(parentIndices.get(j));
+				tempState.set(parentIndices.get(j),ps);
+				iCpy /= partials.size();
+			}
+			pvs.add(new ParentValues(tempState, parentIndices));
+			
+		}
+		//allParentValuesCache2.put(parentIndices, pvs);
+		return pvs;
+	}
+	
 	public static Set<ParentValues> allParentValues(
 			Set<List<PartialState>> allStates, List<Integer> parentIndices) {
 
@@ -217,5 +267,11 @@ public class Reach implements PartialState {
 		}
 		allParentValuesCache.put(parentIndices,pvs);
 		return pvs;
+	}
+
+	@Override
+	public void setReachNr(int nr) {
+		reachNumber = nr;
+		
 	}
 }

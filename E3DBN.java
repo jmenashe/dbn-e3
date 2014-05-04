@@ -313,7 +313,7 @@ public class E3DBN {
 	
 	private double chanceToExplorePartial( Map<Integer, Map<ParentValues, Integer>> PartialPolicies, List<PartialState> currentState) {
 		//Find by simulation
-		final int maxIterations = 400;
+		final int maxIterations = 1000;
 		Random r = new Random();
 		ParentValues[] pvs = new ParentValues[currentState.size()];
 		for(int i = 0; i < currentState.size(); i++) {
@@ -326,8 +326,9 @@ public class E3DBN {
 				for(int stateIndex = 0; stateIndex < currentState.size(); stateIndex++) {
 					double roll = r.nextDouble();
 					double acc = 0;
+					Set<PartialState> set = Reach.allPartials(E3Agent.HABITATS_PER_REACHES);
 
-					for(PartialState ps : Reach.allPartials(allStates)) {
+					for(PartialState ps : set) {
 						acc += ptpl.getProbability(stateIndex, pvs[stateIndex],
 								currentPartialPolicies.get(stateIndex).get(pvs[stateIndex])
 								, ps);
@@ -350,6 +351,7 @@ public class E3DBN {
 	/**
 	 * Should we explore given some policy?
 	 */
+	/*
 	private double chanceToExplore(
 			Map<List<PartialState>, Action> explorationPolicy,
 			List<PartialState> currentState) {
@@ -397,7 +399,7 @@ public class E3DBN {
 		chanceToExplore = probs.get(currentState);
 
 		return chanceToExplore;
-	}
+	}*/
 
 	// }}}
 
@@ -558,7 +560,12 @@ public class E3DBN {
 				for (int action : pv.getSelfParent().possibleActions()) {
 					double currentValue = 0;
 					Map<PartialState,Double> transProb = new HashMap<>();
-					for (ParentValues nextState : Reach.allParentValues(allStates, connections.get(stateIndex))) {
+					Set<ParentValues> set2 = Reach.allParentValues(allStates, connections.get(stateIndex));
+					Set<ParentValues> set = Reach.allParentValues(E3Agent.HABITATS_PER_REACHES, 
+							E3Agent.NBR_REACHES, connections.get(stateIndex));
+					
+					double totalProb = 0;
+					for (ParentValues nextState : set) {
 						double thisProb = 1.0;
 						int i = 0;
 						for (PartialState ps : nextState.getParents()) {
@@ -574,7 +581,7 @@ public class E3DBN {
 										get(pv.
 												getParent(nextState.getParents().
 												indexOf(ps))) == null)  {
-									//thisProb = 0;
+									thisProb = 0;
 								} else {
 									thisProb *= 
 										markovs.get(connections.get(stateIndex).get(i++)).
@@ -595,6 +602,11 @@ public class E3DBN {
 						} else {
 							currentValue += thisProb * prevVf.get(dummy);
 						}
+						totalProb += thisProb;
+					}
+					if ((totalProb > 1.1 || totalProb < 0.9) && totalProb != 0.0) {
+						System.out.println("hej " + totalProb);
+						//throw new ArithmeticException("probabilities fucked up");
 					}
 					if (currentValue > bestValue) {
 						transProbs.put(pv.getSelfParent(), transProb);

@@ -3,6 +3,8 @@ import org.rlcommunity.rlglue.codec.EnvironmentInterface;
 import org.rlcommunity.rlglue.codec.LocalGlue;
 import org.rlcommunity.rlglue.codec.RLGlue;
 
+import sysopenvironment.SysOpEnvironment;
+
 public class RunAll {
     public static void main(String[] args) {
         AgentInterface theAgent = new E3Agent();
