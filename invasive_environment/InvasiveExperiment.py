@@ -18,26 +18,25 @@ import rlglue.RLGlue as RLGlue
 from datetime import datetime
 import os
 
-REACHES=14
-HABITATS=7
+REACHES=4
+HABITATS=3
+
+EPISODES_PER_TEST = 5
+NUMBER_OF_TESTS = 20
 
 RESULTS_DIR = "invasive_results"
 
-def demo():
-    statistics = []
-    this_score = evaluateAgent()
-    printScore(0, this_score)
-    statistics.append(this_score)
+rand = random.Random(1)
+STARTING_STATE = array([rand.randint(1, 3) for i in xrange(REACHES * HABITATS)])
+STARTING_STATE = ",".join(map(str, STARTING_STATE))
 
-    for i in range(0, 10):
-        for j in range(0, 10):
-            RLGlue.RL_env_message("set-start-state " + startingState)
-            RLGlue.RL_start()
-            RLGlue.RL_episode(100)
-        RLGlue.RL_env_message("set-start-state " + startingState)
-        RLGlue.RL_start()
-        this_score = evaluateAgent()
-        printScore((i + 1) * 25, this_score)
+
+def run_test():
+    statistics = []
+
+    for i in range(0, NUMBER_OF_TESTS):
+        this_score = run_some_episodes(EPISODES_PER_TEST)
+        printScore((i + 1) * EPISODES_PER_TEST, this_score)
         statistics.append(this_score)
 
     saveResultToCSV(
@@ -48,20 +47,15 @@ def demo():
     )
 
 
-def printScore(afterEpisodes, score_tuple):
-    print "%d\t\t%.2f\t\t%.2f" % (afterEpisodes, score_tuple[0], score_tuple[1])
-
-#
-# Tell the agent to stop learning, then execute n episodes with his current
-# policy. Estimate the mean and variance of the return over these episodes.
-#
-def evaluateAgent():
+def run_some_episodes(n = EPISODES_PER_TEST):
     sum = 0
     sum_of_squares = 0
-    n = 10
-    RLGlue.RL_agent_message("freeze learning")
+    
     for i in range(0, n):
+        RLGlue.RL_env_message("set-start-state " + STARTING_STATE)
+        RLGlue.RL_start()
         RLGlue.RL_episode(100)
+
         this_return = RLGlue.RL_return()
         sum += this_return
         sum_of_squares += this_return ** 2
@@ -70,7 +64,6 @@ def evaluateAgent():
     variance = (sum_of_squares - n * mean * mean) / (n - 1.0)
     standard_dev = math.sqrt(variance)
 
-    RLGlue.RL_agent_message("unfreeze learning")
     return mean, standard_dev
 
 
@@ -85,33 +78,20 @@ def saveResultToCSV(statistics, reaches, habitats, fileName):
         f.write("# Reaches: %s, Habitats: %s" % (reaches, habitats))
 
 
-# Just do a single evaluateAgent and print it
-def single_evaluation():
-    this_score = evaluateAgent()
-    printScore(0, this_score)
+def printScore(afterEpisodes, score_tuple):
+    print "%d\t\t%.2f\t\t%.2f" % (afterEpisodes, score_tuple[0], score_tuple[1])
+
 
 RLGlue.RL_init()
-print "Telling the environment to use fixed start state."
 
-rand = random.Random(1) # Use same state each time
-startingState = array([rand.randint(1, 3) for i in xrange(REACHES * HABITATS)])
+print "Using a fixed start state for each episode."
+print STARTING_STATE
 
-#S=array([1,1,2, 1, 3, 3, 1][0:nbrReaches * habitatSize])
-startingState = ",".join(map(str, startingState))
-print startingState
+print "-------------------------------------------------------------------------"
+print "Will learn and evaluate for %d episodes" % (EPISODES_PER_TEST)
+print "After Episode\tMean Return\tStandard Deviation"
+print "-------------------------------------------------------------------------"
 
-RLGlue.RL_env_message("set-start-state "+startingState)
-
-RLGlue.RL_start()
-
-print "Starting offline demo\n----------------------------\nWill alternate learning for 10 episodes, then freeze policy and evaluate for 10 episodes.\n"
-print "After Episode\tMean Return\tStandard Deviation\n-------------------------------------------------------------------------"
-
-demo()
-
-print "Evaluating the agent again with the random start state:\n\t\tMean Return\tStandardDeviation\n-----------------------------------------------------"
-RLGlue.RL_env_message("set-random-start-state")
-single_evaluation()
-
+run_test()
 RLGlue.RL_cleanup()
-print "\nProgram Complete."
+print "\nExperiment Complete."

@@ -12,8 +12,8 @@ import java.util.List;
 
 public class E3Agent implements AgentInterface {
 
-    public static final int NBR_REACHES = 14;
-    public static final int HABITATS_PER_REACHES = 7;
+    public static final int NBR_REACHES = 4;
+    public static final int HABITATS_PER_REACHES = 3;
 
     private E3DBN e3;
 
@@ -68,8 +68,7 @@ public class E3Agent implements AgentInterface {
         l(stepCount++ + ") STEP State: " +
                 lastState +
                 " Action: " +
-                Arrays.toString(lastAction
-                        .intArray) + ", " +
+                Arrays.toString(lastAction.intArray) + ", " +
                 e3.policy + ", " +
                 reward + ", " +
                 e3.chanceToExplore + ", " +

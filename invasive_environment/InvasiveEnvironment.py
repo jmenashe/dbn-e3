@@ -18,8 +18,8 @@ from rlglue.types import Reward_observation_terminal
 import numpy as np
 from networkx import adjacency_matrix
 
-REACHES=14
-HABITATS=7
+REACHES=4
+HABITATS=3
 
 class InvasiveEnvironment(Environment):
     """
@@ -64,8 +64,8 @@ class InvasiveEnvironment(Environment):
             #competiton parameter
             competitionFactor = 1
             #there is the same number of
-            reachArrivalRates = array([[random.randint(100, 1000) for i in xrange(2)] for i in xrange(nbrReaches)])
-            reachArrivalProbs = array([[random.random() for i in xrange(2)] for i in xrange(nbrReaches)])
+            reachArrivalRates = array([[150 for i in xrange(2)] for i in xrange(nbrReaches)])
+            reachArrivalProbs = array([[0.1 for i in xrange(2)] for i in xrange(nbrReaches)])
             #first value is for native and the second one for tamarisk
             prodRate = [200, 200]
             #first value is for native and the second one for tamarisk
@@ -130,9 +130,6 @@ class InvasiveEnvironment(Environment):
 
     def env_step(self, action):
         action = action.intArray
-
-        if len(action) != 3:
-            print action, len(action)
 
         assert len(action) == self.simulationParameterObj.nbrReaches, "Expected " + str(
             self.simulationParameterObj.nbrReaches) + " integer action."
