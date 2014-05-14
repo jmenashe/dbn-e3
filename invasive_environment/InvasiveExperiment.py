@@ -21,8 +21,10 @@ import os
 REACHES=4
 HABITATS=3
 
-EPISODES_PER_TEST = 5
-NUMBER_OF_TESTS = 20
+EPISODES_PER_TEST = 1
+NUMBER_OF_TESTS = 100
+
+EPISODE_LENGTH = 100
 
 RESULTS_DIR = "invasive_results"
 
@@ -35,9 +37,9 @@ def run_test():
     statistics = []
 
     for i in range(0, NUMBER_OF_TESTS):
-        this_score = run_some_episodes(EPISODES_PER_TEST)
-        printScore((i + 1) * EPISODES_PER_TEST, this_score)
-        statistics.append(this_score)
+        score = run_episode()
+        printScore((i + 1) * EPISODES_PER_TEST, (score, 0))
+        statistics.append((score, 0))
 
     saveResultToCSV(
         statistics,
@@ -46,25 +48,27 @@ def run_test():
         "results_%s.csv" % datetime.now().replace(microsecond=0).isoformat('_')
     )
 
+def run_episode():
+    RLGlue.RL_env_message("set-start-state " + STARTING_STATE)
+    RLGlue.RL_start()
+    RLGlue.RL_episode(EPISODE_LENGTH)
+
+    return RLGlue.RL_return()
 
 def run_some_episodes(n = EPISODES_PER_TEST):
     sum = 0
     sum_of_squares = 0
-    
-    for i in range(0, n):
-        RLGlue.RL_env_message("set-start-state " + STARTING_STATE)
-        RLGlue.RL_start()
-        RLGlue.RL_episode(100)
 
-        this_return = RLGlue.RL_return()
+    for i in range(0, n):
+
         sum += this_return
         sum_of_squares += this_return ** 2
 
     mean = sum / n
-    variance = (sum_of_squares - n * mean * mean) / (n - 1.0)
-    standard_dev = math.sqrt(variance)
+    #variance = (sum_of_squares - n * mean * mean) / (n - 1.0)
+    #standard_dev = math.sqrt(variance)
 
-    return mean, standard_dev
+    return mean#, standard_dev
 
 
 def saveResultToCSV(statistics, reaches, habitats, fileName):
