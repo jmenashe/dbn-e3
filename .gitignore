@@ -1,6 +1,6 @@
 # Java #
 
-*.jar
+#*.jar
 *.class
 
 # Intellij #
