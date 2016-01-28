@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+for class in *.java; do
+  javac -classpath ".:./JavaRLGlueCodec.jar:./commons-lang3-3.4.jar" $class
+done
